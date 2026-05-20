@@ -8,6 +8,7 @@ class CameraItem(BaseModel):
     name: str
     description: Optional[str] = None
     is_active: bool = False
+    hls_ready: bool = False
     viewer_count: int = 0
     thumbnail_url: str
     latest_url: Optional[str] = None
@@ -30,6 +31,7 @@ class WatchStartResponse(BaseModel):
     hls_url: str
     latest_url: str
     status: str
+    hls_ready: bool = False
 
 
 class HeartbeatRequest(BaseModel):
@@ -57,6 +59,7 @@ class WatchStopResponse(BaseModel):
 class CameraStatusResponse(BaseModel):
     camera_id: str
     is_active: bool
+    hls_ready: bool = False
     viewer_count: int
     hls_url: Optional[str] = None
     latest_url: Optional[str] = None

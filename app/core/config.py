@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     hls_segment_seconds: int = 1
     hls_list_size: int = 5
     hls_delete_threshold: int = 2
+    hls_ready_timeout_seconds: float = 15.0
+    hls_ready_poll_interval_seconds: float = 0.25
 
     model_config = SettingsConfigDict(
         env_file=".env",
