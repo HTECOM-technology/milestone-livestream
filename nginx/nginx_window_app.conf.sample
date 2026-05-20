@@ -1,0 +1,89 @@
+# Windows Nginx on 10.2.18.11
+# Copy this file content to: C:\nginx\conf\nginx.conf
+# Role:
+# - Serve HLS/static files from C:\hls and C:\thumbnails
+# - Proxy API to local Python FastAPI at 127.0.0.1:8000
+
+worker_processes  1;
+
+events {
+    worker_connections  4096;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    sendfile        on;
+    tcp_nopush      on;
+    tcp_nodelay     on;
+    keepalive_timeout  65;
+
+    server {
+        listen 80;
+        server_name _;
+
+        client_max_body_size 100M;
+
+        location /api/ {
+            proxy_pass http://127.0.0.1:8000/api/;
+            proxy_http_version 1.1;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /health {
+            proxy_pass http://127.0.0.1:8000/health;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+        }
+
+        # HLS playlist: no-cache because it changes continuously.
+        location ~ ^/hls/(.*\.m3u8)$ {
+            alias C:/hls/$1;
+            types { application/vnd.apple.mpegurl m3u8; }
+            expires -1;
+            add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "*" always;
+        }
+
+        # HLS segments: short cache is acceptable.
+        location ~ ^/hls/(.*\.ts)$ {
+            alias C:/hls/$1;
+            types { video/mp2t ts; }
+            expires 5s;
+            add_header Cache-Control "public, max-age=5" always;
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "*" always;
+        }
+
+        # Latest image under each active HLS folder.
+        location ~ ^/hls/(.*\.jpg)$ {
+            alias C:/hls/$1;
+            types { image/jpeg jpg jpeg; }
+            expires 2s;
+            add_header Cache-Control "public, max-age=2" always;
+            add_header Access-Control-Allow-Origin * always;
+        }
+
+        location /hls/ {
+            alias C:/hls/;
+            add_header Access-Control-Allow-Origin * always;
+            add_header Cache-Control "no-cache" always;
+        }
+
+        location /thumbnails/ {
+            alias C:/thumbnails/;
+            types { image/jpeg jpg jpeg; }
+            expires 10s;
+            add_header Cache-Control "public, max-age=10" always;
+            add_header Access-Control-Allow-Origin * always;
+        }
+    }
+}

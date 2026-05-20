@@ -1,0 +1,210 @@
+{
+  "refreshed_at": "2026-05-20T04:05:49.902950+00:00",
+  "items": [
+    {
+      "camera_id": "66a23788-b7ef-45cf-9bb1-b154857a06b5",
+      "name": "Km212+000 PTZ Km212+000 PTZ Đại Xuyên, Phú Xuyên, Hà Nội",
+      "description": null
+    },
+    {
+      "camera_id": "c75497be-ca4e-4d8e-bacd-53d25f80ee7e",
+      "name": "KM212+800 HN-NB Đại Xuyên, Phú Xuyên, Hà Nội",
+      "description": null
+    },
+    {
+      "camera_id": "e9e55d6c-661b-47d9-a6fc-ce0240a3e9ce",
+      "name": "KM212+800 NB-HN Đại Xuyên, Phú Xuyên, Hà Nội",
+      "description": null
+    },
+    {
+      "camera_id": "52aec228-8fdc-453a-9134-6e1d1f81677d",
+      "name": "KM213+500 PTZ Bạch Thượng, Duy Tiên, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "8b32eb95-7516-4c8c-91a0-ec4125f3d9d0",
+      "name": "KM215+900 PTZ Bạch Thượng, Duy Tiên, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "54ccc60b-f4f0-4f7c-8f22-157371a39cdd",
+      "name": "KM217+750 HN-NB Bạch Thượng, Duy Tiên, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "90e41907-1ee3-4dfd-9ba7-05757ede2bef",
+      "name": "KM217+750 NB-HN Bạch Thượng, Duy Tiên, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "153efaef-9ad3-4db4-b27b-09ef059efdd8",
+      "name": "KM218+700 PTZ Vực Vòng",
+      "description": null
+    },
+    {
+      "camera_id": "81f372bc-c526-481d-a839-ba6a869824a9",
+      "name": "KM219+750 HN-NB",
+      "description": null
+    },
+    {
+      "camera_id": "b1b7384b-b793-4e37-a619-e3d8f8522b54",
+      "name": "KM219+750 NB-HN",
+      "description": null
+    },
+    {
+      "camera_id": "48185ff1-3674-41f0-8450-dc50a2c87895",
+      "name": "KM221+900 PTZ Tiên Nội, Duy Tiên, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "351dfe23-c071-415b-93a9-eb47cdca78c0",
+      "name": "KM223+900 PTZ Tiên Nội, Duy Tiên, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "c86afa76-8e41-4f3d-b03e-344711be33b4",
+      "name": "KM225+900 HN-NB Tiên Nội, Duy Tiên, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "ec99b851-7a49-46f0-90e3-44f550a162f9",
+      "name": "KM225+900 NB-HN Tiên Nội, Duy Tiên, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "94025cb9-ac01-47c7-a25a-dbb19df75448",
+      "name": "KM227+600 PTZ Tiên Hiệp, Phủ Lý, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "b67a3c70-d816-438a-8e3c-8758e25dfefd",
+      "name": "KM229+600 HN-NB Tiên Hải, Phủ Lý, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "3cd2a6a1-c830-434b-a18e-d4d62ccfd6e0",
+      "name": "KM229+600 NB-HN Tiên Hải, Phủ Lý, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "29a5fcc9-802c-4d9d-a157-98fc8ac73473",
+      "name": "KM230+000 PTZ Tiên Hải, Phủ Lý, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "6b7e442f-39cd-4b73-a0cf-935c3c1efbbb",
+      "name": "KM231+700 HN-NB Liêm Chung, Phủ Lý, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "469a9bcb-dccc-417b-89cf-892c6e96eaef",
+      "name": "KM231+700 NB-HN Liêm Chung, Phủ Lý, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "6ddbb82e-35fe-4e85-9d5a-6d8338c34e21",
+      "name": "KM233+850 PTZ Liêm Cần, Thanh Liêm, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "828e552f-8c66-4bd4-9a41-df2d3e23e2e3",
+      "name": "KM235+850 HN-NB Liêm Cần, Thanh Liêm, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "d3590e81-3eb4-49f4-9a62-c9c91916317e",
+      "name": "KM235+850 NB-HN Liêm Cần, Thanh Liêm, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "173a88cd-7b47-4905-81fd-37fe70ca156b",
+      "name": "KM237+850 PTZ  Liêm Thuận, Thanh Liêm, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "3217e927-a1c0-4ec3-a4e6-d25510a1315a",
+      "name": "KM239+800 PTZ Liêm Túc, Thanh Liêm, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "7bc54f11-c863-4664-851f-10728978dfb7",
+      "name": "KM241+800 HN-NB Liêm Sơn, Thanh Liêm, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "e1702da4-7fce-47fd-985f-3e85eb20f534",
+      "name": "KM241+800 NB-HN Liêm Sơn, Thanh Liêm, Hà Nam",
+      "description": null
+    },
+    {
+      "camera_id": "a05fe5aa-ebe5-46f0-9b6c-09c33e8485bd",
+      "name": "KM243+900 PTZ Yên Trung, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "53949673-9ddb-4bf6-a80f-a81069db690c",
+      "name": "KM245+900 PTZ Yên Trung, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "31d30abd-b18b-4098-89d3-e5cb28b415fa",
+      "name": "KM247+900 PTZ Yên Nghĩa, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "d237868f-2b31-4002-8e59-52bcb214fddd",
+      "name": "KM249+900 NB-HN Yên Chính, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "6d5f237f-1f9a-4493-b248-e459464be7ef",
+      "name": "KM249+950 HN-NB Yên Chính, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "dbc604ff-f012-4a32-be04-29e2d99fa7d7",
+      "name": "KM251+900 PTZ Yên Chính, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "256b70da-10e8-41b3-ac20-b61e5b251e7b",
+      "name": "KM253+900 PTZ Yên Khánh, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "0744551b-0266-4141-ac87-a86855daa70b",
+      "name": "KM255+900 HN-NB  Yên Phong, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "ca9df481-a6cf-46dd-a8da-f9f6723fdfe3",
+      "name": "KM255+900 NB-HN Yên Phong, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "d4d8aaf2-c8cf-4e53-a92a-11af0af6de3d",
+      "name": "KM257+900 PTZ Yên Hồng, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "119c7151-ba8f-4eca-a6a2-a004c34b126b",
+      "name": "KM258+800 PTZ Yên Hồng, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "be45671b-6931-43ed-aea8-c180d4b881c9",
+      "name": "KM259+060 HN-NB Yên Hồng, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "318bacd7-99ab-4c9c-ade6-fbe992762027",
+      "name": "KM259+060 NB-HN Yên Hồng, Ý Yên, Nam Định",
+      "description": null
+    },
+    {
+      "camera_id": "ddb77a92-09bc-4b60-8c4a-afca30e08d51",
+      "name": "KM260 + 000 PTZ",
+      "description": null
+    }
+  ]
+}
