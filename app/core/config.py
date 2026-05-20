@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     worker_target_fps: int = 2
     worker_frame_interval_seconds: float = 0.5
     worker_force_throttle: bool = False
+    worker_idle_stop_delay_seconds: float = 30.0
 
     hls_width: int = 854
     hls_height: int = 480

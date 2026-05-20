@@ -174,6 +174,7 @@ let hlsScriptPromise = null;
 let activeCameraSession = null;
 let cameraRenderRequestId = 0;
 let cameraModalRequestId = 0;
+let cacheBustCounter = 0;
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -189,8 +190,16 @@ function delay(ms) {
 }
 
 function withCacheBust(url) {
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}_=${Date.now()}`;
+    const value = `${Date.now()}-${cacheBustCounter++}`;
+
+    try {
+        const parsedUrl = new URL(url, window.location.href);
+        parsedUrl.searchParams.set("_", value);
+        return parsedUrl.href;
+    } catch (error) {
+        const separator = url.includes("?") ? "&" : "?";
+        return `${url}${separator}_=${encodeURIComponent(value)}`;
+    }
 }
 
 function getCameraCoordinate(camera, keys) {
@@ -248,6 +257,21 @@ function loadHlsScript() {
     });
 
     return hlsScriptPromise;
+}
+
+function createCacheBustingHlsLoader() {
+    const BaseLoader = window.Hls?.DefaultConfig?.loader;
+    if (!BaseLoader) return undefined;
+
+    return class CacheBustingHlsLoader extends BaseLoader {
+        load(context, config, callbacks) {
+            if (context && (context.type === "manifest" || context.type === "level")) {
+                context.url = withCacheBust(context.url);
+            }
+
+            super.load(context, config, callbacks);
+        }
+    };
 }
 
 async function renderCameras(highwayId) {
@@ -350,7 +374,7 @@ async function startCameraWatch(camera) {
     return data;
 }
 
-async function stopActiveCameraWatch() {
+function releaseActiveCameraWatch() {
     if (!activeCameraSession) return;
 
     const session = activeCameraSession;
@@ -362,16 +386,6 @@ async function stopActiveCameraWatch() {
 
     if (session.hls) {
         session.hls.destroy();
-    }
-
-    try {
-        await fetch(`${CAMERA_API_URL}/${encodeURIComponent(session.cameraId)}/watch/stop`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session_id: session.sessionId }),
-        });
-    } catch (error) {
-        console.error("Error stopping camera watch:", error);
     }
 }
 
@@ -388,17 +402,12 @@ function startCameraHeartbeat(cameraId, sessionId) {
 }
 
 async function attachHlsStream(video, hlsUrl) {
-    const sourceUrl = withCacheBust(hlsUrl);
-
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = sourceUrl;
-        return null;
-    }
-
     await loadHlsScript();
 
     if (window.Hls?.isSupported()) {
+        const CacheBustingHlsLoader = createCacheBustingHlsLoader();
         const hls = new window.Hls({
+            loader: CacheBustingHlsLoader,
             lowLatencyMode: true,
             liveSyncDurationCount: 2,
             manifestLoadingMaxRetry: 6,
@@ -412,7 +421,7 @@ async function attachHlsStream(video, hlsUrl) {
                 xhr.setRequestHeader("Pragma", "no-cache");
             },
         });
-        hls.loadSource(sourceUrl);
+        hls.loadSource(hlsUrl);
         hls.attachMedia(video);
         hls.on(window.Hls.Events.ERROR, function (_, data) {
             if (!data.fatal) return;
@@ -432,7 +441,7 @@ async function attachHlsStream(video, hlsUrl) {
         return hls;
     }
 
-    video.src = sourceUrl;
+    video.src = withCacheBust(hlsUrl);
     return null;
 }
 
@@ -485,7 +494,7 @@ async function openCameraModal(camera) {
         document.body.appendChild(modal);
     }
 
-    await stopActiveCameraWatch();
+    releaseActiveCameraWatch();
 
     document.getElementById("cameraModalTitle").textContent = camera.name || "Camera";
     const video = document.getElementById("cameraVideo");
@@ -502,11 +511,6 @@ async function openCameraModal(camera) {
     try {
         const watchData = await startCameraWatch(camera);
         if (requestId !== cameraModalRequestId) {
-            await fetch(`${CAMERA_API_URL}/${encodeURIComponent(camera.camera_id)}/watch/stop`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ session_id: watchData.session_id }),
-            });
             return;
         }
 
@@ -514,11 +518,6 @@ async function openCameraModal(camera) {
         const hls = await attachHlsStreamWithRetry(video, watchData.hls_url);
         if (requestId !== cameraModalRequestId) {
             if (hls) hls.destroy();
-            await fetch(`${CAMERA_API_URL}/${encodeURIComponent(camera.camera_id)}/watch/stop`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ session_id: watchData.session_id }),
-            });
             return;
         }
 
@@ -543,7 +542,7 @@ window.closeCameraModal = async function () {
     cameraModalRequestId += 1;
     const modal = document.getElementById("cameraModal");
     if (modal) {
-        await stopActiveCameraWatch();
+        releaseActiveCameraWatch();
         const video = document.getElementById("cameraVideo");
         video.pause();
         video.removeAttribute("src");

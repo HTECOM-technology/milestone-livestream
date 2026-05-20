@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from threading import RLock
+from threading import RLock, Timer
 from typing import Optional
 
 from app.core.config import get_settings
@@ -30,9 +30,11 @@ class CameraWorkerManager:
     def __init__(self) -> None:
         self._lock = RLock()
         self._workers: dict[str, WorkerRuntimeState] = {}
+        self._idle_stop_timers: dict[str, Timer] = {}
 
     def start_worker(self, camera_id: str) -> WorkerRuntimeState:
         with self._lock:
+            self.cancel_scheduled_stop(camera_id)
             existing = self._workers.get(camera_id)
             if existing and existing.is_running():
                 existing.status = 'running'
@@ -70,6 +72,7 @@ class CameraWorkerManager:
 
     def stop_worker(self, camera_id: str) -> bool:
         with self._lock:
+            self.cancel_scheduled_stop(camera_id)
             state = self._workers.get(camera_id)
             if not state:
                 return False
@@ -85,6 +88,25 @@ class CameraWorkerManager:
                         process.kill()
             self._workers.pop(camera_id, None)
             return True
+
+    def schedule_stop_worker(self, camera_id: str, delay_seconds: float) -> bool:
+        with self._lock:
+            self.cancel_scheduled_stop(camera_id)
+            state = self._workers.get(camera_id)
+            if not state or not state.is_running():
+                return False
+
+            state.status = 'idle'
+            timer = Timer(delay_seconds, self.stop_worker, args=[camera_id])
+            timer.daemon = True
+            self._idle_stop_timers[camera_id] = timer
+            timer.start()
+            return True
+
+    def cancel_scheduled_stop(self, camera_id: str) -> None:
+        timer = self._idle_stop_timers.pop(camera_id, None)
+        if timer:
+            timer.cancel()
 
     def get_worker(self, camera_id: str) -> Optional[WorkerRuntimeState]:
         with self._lock:

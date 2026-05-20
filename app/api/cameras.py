@@ -156,8 +156,9 @@ def watch_stop(camera_id: str, payload: WatchStopRequest) -> WatchStopResponse:
     viewer_store.stop_session(camera_id, payload.session_id)
     viewer_count = viewer_store.count_viewers(camera_id)
     if viewer_count <= 0:
-        camera_worker_manager.stop_worker(camera_id)
-        status = 'stopped'
+        settings = get_settings()
+        camera_worker_manager.schedule_stop_worker(camera_id, settings.worker_idle_stop_delay_seconds)
+        status = 'idle'
     else:
         status = 'running'
 
