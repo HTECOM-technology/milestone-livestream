@@ -67,6 +67,9 @@ def list_cameras(refresh: bool = False) -> CameraListResponse:
     items: list[CameraItem] = []
 
     for camera in camera_registry.list_cameras(refresh=refresh):
+        if "ptz" not in camera.name.lower():
+            continue
+
         worker = camera_worker_manager.get_worker(camera.camera_id)
         is_active = bool(worker and worker.is_running())
         hls_ready = is_camera_hls_ready(camera.camera_id) if is_active else False
