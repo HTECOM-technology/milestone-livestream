@@ -7,6 +7,8 @@ class CameraItem(BaseModel):
     camera_id: str
     name: str
     description: Optional[str] = None
+    lat: Optional[float] = None
+    long: Optional[float] = None
     is_active: bool = False
     hls_ready: bool = False
     viewer_count: int = 0

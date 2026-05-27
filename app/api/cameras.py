@@ -1,4 +1,6 @@
+import json
 import time
+from functools import lru_cache
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -21,6 +23,32 @@ from app.utils.paths import build_hls_url, build_latest_url, build_thumbnail_url
 from app.worker_manager.manager import camera_worker_manager
 
 router = APIRouter(prefix='/api/cameras', tags=['cameras'])
+
+
+@lru_cache(maxsize=1)
+def load_camera_locations() -> list[tuple[str, dict[str, float | None]]]:
+    location_file = Path(__file__).with_name("cgnb_camera_location.json")
+
+    try:
+        raw_locations = json.loads(location_file.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+    return sorted(
+        ((location_name.upper(), coords) for location_name, coords in raw_locations.items()),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    )
+
+
+def get_camera_coordinates(camera_name: str) -> tuple[float | None, float | None]:
+    normalized_name = camera_name.upper()
+
+    for location_name, coords in load_camera_locations():
+        if location_name in normalized_name:
+            return coords.get("lat"), coords.get("long")
+
+    return None, None
 
 
 def is_hls_ready(hls_dir: Path) -> bool:
@@ -70,6 +98,7 @@ def list_cameras(refresh: bool = False) -> CameraListResponse:
         if "ptz" not in camera.name.lower():
             continue
 
+        lat, long = get_camera_coordinates(camera.name)
         worker = camera_worker_manager.get_worker(camera.camera_id)
         is_active = bool(worker and worker.is_running())
         hls_ready = is_camera_hls_ready(camera.camera_id) if is_active else False
@@ -80,6 +109,8 @@ def list_cameras(refresh: bool = False) -> CameraListResponse:
                 camera_id=camera.camera_id,
                 name=camera.name,
                 description=camera.description,
+                lat=lat,
+                long=long,
                 is_active=is_active,
                 hls_ready=hls_ready,
                 viewer_count=viewer_count,

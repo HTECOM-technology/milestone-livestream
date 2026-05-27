@@ -19,7 +19,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    padding: 10px 20px;
+    padding: 16px;
     border-bottom: 1px solid #e4e4e4;
   }
 
@@ -35,8 +35,10 @@
   .td-tab .td-header .td-heading h2 {
     margin: 0;
     font-size: 18px;
+		line-height: 31px;
     font-weight: bold;
     white-space: nowrap;
+		text-transform: uppercase;
   }
 
   .td-tab .td-header .td-heading__filters input,

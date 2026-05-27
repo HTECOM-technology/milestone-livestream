@@ -112,6 +112,7 @@ slider.addEventListener(
 );
 const API_BASE_URL = "";
 const API_HIGHWAYS_URL = `${API_BASE_URL}/o/c/highways/`;
+const CAMERA_SHOW_STATE_API_URL = `${API_BASE_URL}/o/vec-setting-camera-show-state`;
 const API_HEADERS = {
     accept: "application/json",
 };
@@ -133,36 +134,6 @@ async function fetchHighwaysData() {
         return FALLBACK_HIGHWAY_ITEMS;
     }
 }
-
-async function fetchTollDetail(highwayId) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/o/c/highways/${highwayId}/stationInfoAndHighwayFK`, {
-            method: "GET",
-            headers: API_HEADERS,
-        });
-        console.log('Kết quả: ', response);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-
-        return (data.items || []).map((item) => ({
-            lat: Number(item.lat),
-            lng: Number(item.lng),
-            name: item.name,
-            id: item.id,
-            img: item.image?.link?.href ? `${API_BASE_URL}${item.image.link.href}` : "https://placehold.co/104x104",
-            address: item.location || item.name,
-            status: "Mở cả ngày",
-            type: item.type?.key || "tollStation",
-            fees: [],
-        }));
-    } catch (error) {
-        console.error(`Error fetching toll details for highway ${highwayId}:`, error);
-        return [];
-    }
-}
 const CAMERA_HIGHWAY_ID = 44147;
 const CAMERA_API_URL = "https://portal.tctvec.vn/o/its/api/cameras";
 const HLS_JS_URL = "https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js";
@@ -175,6 +146,7 @@ let activeCameraSession = null;
 let cameraRenderRequestId = 0;
 let cameraModalRequestId = 0;
 let cacheBustCounter = 0;
+const cameraShowStateCache = new Map();
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -243,6 +215,84 @@ async function fetchCameras() {
     return cameraList;
 }
 
+function getCameraIdentity(camera) {
+    return String(camera?.camera_id ?? camera?.id ?? "").trim();
+}
+
+function createCameraShowStateMap(items) {
+    return new Map(
+        (items || [])
+            .filter((item) => item && item.cameraId)
+            .map((item) => [
+                String(item.cameraId),
+                {
+                    cameraId: String(item.cameraId),
+                    internetVisible: item.internetVisible !== false,
+                },
+            ])
+    );
+}
+
+async function fetchCameraShowState(highwayId) {
+    const normalizedHighwayId = Number(highwayId);
+
+    if (!normalizedHighwayId) {
+        return [];
+    }
+
+    if (cameraShowStateCache.has(normalizedHighwayId)) {
+        return cameraShowStateCache.get(normalizedHighwayId);
+    }
+
+    try {
+        const response = await fetch(
+            `${CAMERA_SHOW_STATE_API_URL}?highwayId=${encodeURIComponent(normalizedHighwayId)}`,
+            {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Camera show state API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const items = Array.isArray(data?.items) ? data.items : [];
+
+        cameraShowStateCache.set(normalizedHighwayId, items);
+
+        return items;
+    } catch (error) {
+        console.error("Error fetching camera show state:", error);
+        return [];
+    }
+}
+
+function filterCamerasByInternetShowState(cameras, items) {
+    const settingsMap = createCameraShowStateMap(items);
+
+    return (cameras || []).filter((camera) => {
+        const cameraId = getCameraIdentity(camera);
+
+        if (!cameraId) {
+            return false;
+        }
+
+        const setting = settingsMap.get(cameraId);
+
+        if (!setting) {
+            return true;
+        }
+
+        return setting.internetVisible !== false;
+    });
+}
+
 function loadHlsScript() {
     if (window.Hls) return Promise.resolve();
     if (hlsScriptPromise) return hlsScriptPromise;
@@ -290,7 +340,12 @@ async function renderCameras(highwayId) {
 
     let cameras = [];
     try {
-        cameras = await fetchCameras();
+        const [cameraData, cameraShowStates] = await Promise.all([
+            fetchCameras(),
+            fetchCameraShowState(highwayId),
+        ]);
+
+        cameras = filterCamerasByInternetShowState(cameraData, cameraShowStates);
     } catch (error) {
         if (requestId !== cameraRenderRequestId) return;
         console.error("Error fetching cameras:", error);
@@ -593,18 +648,11 @@ function mapApiDataToRouteData(apiItems) {
                 end: endName,
             },
             intro: item.description || "",
-            intersections: [],
-            tolls: [],
-            rests: [],
-            content: [],
             lanesInfo: lanesInfo,
             mapData: {
                 origin: { lat: startLat, lng: startLng, name: startName },
                 destination: { lat: endLat, lng: endLng, name: endName },
                 waypoints: [],
-                intersectionLocations: [],
-                tollLocations: [],
-                restLocations: [],
                 cameraLocations: [],
             },
         };
@@ -674,14 +722,6 @@ async function initializeApp() {
         renderDetail(ROUTE_DATA[0]);
         setupFilterListeners();
 
-        for (let index = 0; index < ROUTE_DATA.length; index++) {
-            const route = ROUTE_DATA[index];
-            if (route.id) {
-                const tollLocations = await fetchTollDetail(route.id);
-                ROUTE_DATA[index].mapData.tollLocations = tollLocations;
-            }
-        }
-
         if (map) {
             renderCameras(ROUTE_DATA[0].id);
             displayRoute(ROUTE_DATA[0]);
@@ -695,7 +735,7 @@ function populateRouteSelect(routes) {
     const routeSelect = document.getElementById("routeSelect");
     if (!routeSelect) return;
 
-    routeSelect.innerHTML = '<option value="">Tất cả tuyến đường</option>';
+    routeSelect.innerHTML = '';
 
     routes.forEach((route, index) => {
         const option = document.createElement("option");
@@ -902,93 +942,8 @@ function displayMarkers(routeData) {
         return;
     }
 
-    const {
-        intersectionLocations,
-        tollLocations,
-        restLocations,
-        cameraLocations,
-    } = routeData.mapData;
-
-    const showIntersections = isOptionChecked("intersection");
-    const showTolls = isOptionChecked("toll");
-    const showRests = isOptionChecked("stop");
+    const { cameraLocations } = routeData.mapData;
     const showCameras = isOptionChecked("camera");
-    if (intersectionLocations?.length) {
-        intersectionLocations.forEach((intersection) => {
-            const marker = new window.google.maps.Marker({
-                position: { lat: intersection.lat, lng: intersection.lng },
-                map,
-                title: intersection.name,
-                visible: showIntersections,
-                icon: {
-                    url: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
-                    scaledSize: new window.google.maps.Size(35, 35),
-                },
-            });
-            console.log('Tọa độ: ', intersection);
-            const infoWindow = new window.google.maps.InfoWindow({
-                content: `<strong>🔀 ${intersection.name}</strong>`,
-            });
-
-            marker.addListener("click", () => {
-                closeAllInfoWindows();
-                infoWindow.open(map, marker);
-            });
-
-            markers.push({ marker, infoWindow, type: "intersection" });
-        });
-    }
-    if (tollLocations?.length) {
-        tollLocations.forEach((toll) => {
-            const marker = new window.google.maps.Marker({
-                position: { lat: toll.lat, lng: toll.lng },
-                map,
-                title: toll.name,
-                visible: showTolls,
-                icon: {
-                    url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-                    scaledSize: new window.google.maps.Size(35, 35),
-                },
-            });
-
-            const infoWindow = new window.google.maps.InfoWindow({
-                content: `<strong>🚦 ${toll.name}</strong>`,
-            });
-
-            marker.addListener("click", () => {
-                closeAllInfoWindows();
-                infoWindow.open(map, marker);
-            });
-
-            markers.push({ marker, infoWindow, type: "toll" });
-        });
-    }
-    if (restLocations?.length) {
-        restLocations.forEach((rest) => {
-            console.log('Tọa độ 2: ', rest);
-            const marker = new window.google.maps.Marker({
-                position: { lat: rest.lat, lng: rest.lng },
-                map,
-                title: rest.name,
-                visible: showRests,
-                icon: {
-                    url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-                    scaledSize: new window.google.maps.Size(35, 35),
-                },
-            });
-
-            const infoWindow = new window.google.maps.InfoWindow({
-                content: `<strong>☕ ${rest.name}</strong>`,
-            });
-
-            marker.addListener("click", () => {
-                closeAllInfoWindows();
-                infoWindow.open(map, marker);
-            });
-
-            markers.push({ marker, infoWindow, type: "rest" });
-        });
-    }
     if (cameraLocations?.length) {
         cameraLocations.forEach((camera) => {
             if (!Number.isFinite(camera.lat) || !Number.isFinite(camera.lng)) return;
@@ -1055,38 +1010,6 @@ function closeAllInfoWindows() {
     markers.forEach(({ infoWindow }) => infoWindow.close());
 }
 
-function toggleTollStations(show) {
-    markers.forEach(({ marker, type }) => {
-        if (type === "toll") {
-            marker.setVisible(show);
-        }
-    });
-}
-
-function toggleRestStations(show) {
-    markers.forEach(({ marker, type }) => {
-        if (type === "rest") {
-            marker.setVisible(show);
-        }
-    });
-}
-
-function toggleConstruction(show) {
-    markers.forEach(({ marker, type }) => {
-        if (type === "construction") {
-            marker.setVisible(show);
-        }
-    });
-}
-
-function toggleIncidents(show) {
-    markers.forEach(({ marker, type }) => {
-        if (type === "incident") {
-            marker.setVisible(show);
-        }
-    });
-}
-
 function toggleRoute(show) {
     if (directionsRenderer) {
         directionsRenderer.setMap(show ? map : null);
@@ -1144,38 +1067,6 @@ const dataOptions = [
         <rect width="20" height="20" fill="white" />
       </clipPath>
     </defs>
-  </svg>`,
-    },
-    {
-        id: "toll",
-        title: "Hiển thị trạm thu phí",
-        checked: true,
-        icon: `<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-  </svg>`,
-    },
-    {
-        id: "stop",
-        title: "Hiển thị điểm dừng",
-        checked: false,
-        icon: `<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
-  </svg>`,
-    },
-    {
-        id: "construction",
-        title: "Hiển thị công trường",
-        checked: false,
-        icon: `<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-  </svg>`,
-    },
-    {
-        id: "incident",
-        title: "Hiển thị sự cố",
-        checked: false,
-        icon: `<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
   </svg>`,
     },
     {
@@ -1270,18 +1161,6 @@ optionsContainer.addEventListener("change", (e) => {
         switch (optionId) {
             case "route":
                 toggleRoute(isChecked);
-                break;
-            case "toll":
-                toggleTollStations(isChecked);
-                break;
-            case "stop":
-                toggleRestStations(isChecked);
-                break;
-            case "construction":
-                toggleConstruction(isChecked);
-                break;
-            case "incident":
-                toggleIncidents(isChecked);
                 break;
             case "camera":
                 toggleCameras(isChecked);
