@@ -107,9 +107,12 @@ function Assert-Prerequisites {
     }
 
     $pythonExe = Get-PythonExecutable
-    $importCheck = "import fastapi, pyodbc, uvicorn, dotenv, pydantic_settings; import app.main"
+    $importCheck = "import fastapi, uvicorn, dotenv, pydantic_settings, apscheduler, requests, Crypto; import app.main"
+    $prevPref = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     $importOutput = & $pythonExe "-c" $importCheck 2>&1
     $importExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $prevPref
     if ($importExitCode -ne 0) {
         Write-Host "Chi tiet loi import:" -ForegroundColor Yellow
         $importOutput | ForEach-Object { Write-Host $_ }
@@ -226,7 +229,7 @@ function Invoke-SupervisorLoop {
             $stderrLog = Join-Path $LogsDir "app-$timestamp.err.log"
 
             Write-SupervisorLog "Starting worker with log files $([IO.Path]::GetFileName($stdoutLog)) and $([IO.Path]::GetFileName($stderrLog))."
-            $worker = Start-Process -FilePath $pythonExe -ArgumentList "`"$RunPy`"" -WorkingDirectory $ProjectRoot -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog -PassThru
+            $worker = Start-Process -FilePath $pythonExe -ArgumentList "`"$RunPy`"" -WorkingDirectory $ProjectRoot -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog -WindowStyle Hidden -PassThru
             Set-Content -Path $WorkerPidFile -Value $worker.Id
             Write-SupervisorLog "Worker started with PID $($worker.Id)."
 
