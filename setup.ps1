@@ -108,8 +108,11 @@ function Assert-Prerequisites {
 
     $pythonExe = Get-PythonExecutable
     $importCheck = "import fastapi, pyodbc, uvicorn, dotenv, pydantic_settings; import app.main"
-    & $pythonExe "-c" $importCheck *> $null
-    if ($LASTEXITCODE -ne 0) {
+    $importOutput = & $pythonExe "-c" $importCheck 2>&1
+    $importExitCode = $LASTEXITCODE
+    if ($importExitCode -ne 0) {
+        Write-Host "Chi tiet loi import:" -ForegroundColor Yellow
+        $importOutput | ForEach-Object { Write-Host $_ }
         throw "Thieu package Python can thiet. Hay chay pip install -r requirements.txt trong moi truong Windows."
     }
 
