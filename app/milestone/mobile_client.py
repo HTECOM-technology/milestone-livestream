@@ -164,12 +164,7 @@ class MilestoneMobileClient:
         self.base_url = settings.milestone_base_url.rstrip("/")
         self.comm_url = f"{self.base_url}/XProtectMobile/Communication"
 
-        domain = getattr(settings, "milestone_domain", "") or ""
-        username = settings.milestone_username
-        if domain and "\\" not in username:
-            self.full_username = f"{domain}\\{username}"
-        else:
-            self.full_username = username
+        self.full_username = settings.milestone_username
 
         self.password = settings.milestone_password
         self.timeout = settings.milestone_request_timeout_seconds
