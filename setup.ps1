@@ -77,6 +77,126 @@ function Remove-FileIfExists {
     }
 }
 
+function Stop-ProcessTree {
+    param([int]$ProcessId)
+
+    if ($ProcessId -le 0) {
+        return
+    }
+
+    try {
+        $children = Get-CimInstance Win32_Process -Filter "ParentProcessId=$ProcessId" -ErrorAction SilentlyContinue
+        foreach ($child in $children) {
+            Stop-ProcessTree -ProcessId ([int]$child.ProcessId)
+        }
+    } catch {
+        Write-SupervisorLog "Could not inspect children for PID $ProcessId`: $($_.Exception.Message)"
+    }
+
+    try {
+        Stop-Process -Id $ProcessId -Force -ErrorAction Stop
+        Write-SupervisorLog "Stopped process PID $ProcessId."
+    } catch {
+        Write-SupervisorLog "Process PID $ProcessId could not be stopped cleanly: $($_.Exception.Message)"
+    }
+}
+
+function Get-ConfiguredAppPort {
+    if (-not (Test-Path -LiteralPath $EnvFile)) {
+        return 8000
+    }
+
+    $line = Get-Content -LiteralPath $EnvFile -ErrorAction SilentlyContinue |
+        Where-Object { $_ -match '^\s*APP_PORT\s*=\s*"?(\d+)' } |
+        Select-Object -First 1
+
+    if ($line -and $line -match '^\s*APP_PORT\s*=\s*"?(\d+)') {
+        return [int]$Matches[1]
+    }
+
+    return 8000
+}
+
+function Get-ListeningProcessIdsByPort {
+    param([int]$Port)
+
+    try {
+        return @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty OwningProcess -Unique)
+    } catch {
+        return @()
+    }
+}
+
+function Get-ProjectRunProcessIds {
+    try {
+        $processes = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.ProcessId -ne $PID -and
+                $_.CommandLine -and
+                $_.CommandLine -like "*$RunPy*"
+            }
+
+        return @($processes | Select-Object -ExpandProperty ProcessId -Unique)
+    } catch {
+        return @()
+    }
+}
+
+function Test-AppPortCanBind {
+    param([int]$Port)
+
+    $listener = $null
+    try {
+        $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Any, $Port)
+        $listener.Start()
+        return $true
+    } catch {
+        return $false
+    } finally {
+        if ($listener) {
+            $listener.Stop()
+        }
+    }
+}
+
+function Clear-StaleAppProcesses {
+    $port = Get-ConfiguredAppPort
+    $candidatePids = @()
+    $candidatePids += Get-ListeningProcessIdsByPort -Port $port
+    $candidatePids += Get-ProjectRunProcessIds
+
+    foreach ($candidatePid in ($candidatePids | Where-Object { $_ } | Sort-Object -Unique)) {
+        if ([int]$candidatePid -ne $PID) {
+            Write-SupervisorLog "Stopping stale app process PID $candidatePid before start/stop cleanup."
+            Stop-ProcessTree -ProcessId ([int]$candidatePid)
+        }
+    }
+}
+
+function Assert-AppPortAvailable {
+    $port = Get-ConfiguredAppPort
+
+    if (Test-AppPortCanBind -Port $port) {
+        return
+    }
+
+    $owners = Get-ListeningProcessIdsByPort -Port $port
+    if ($owners.Count -gt 0) {
+        $ownerText = ($owners | Sort-Object -Unique) -join ", "
+        throw "Port $port dang duoc giu boi PID: $ownerText. Hay chay .\setup.ps1 stop roi start lai."
+    }
+
+    try {
+        $excluded = netsh int ipv4 show excludedportrange protocol=tcp 2>$null
+        Write-SupervisorLog "Port $port cannot bind and has no listening owner. IPv4 excluded ranges: $($excluded -join ' | ')"
+    } catch {
+        Write-SupervisorLog "Port $port cannot bind and excluded port ranges could not be inspected."
+    }
+
+    throw "Port $port khong bind duoc nhung khong thay process listen. Co the port bi Windows reserve/excluded. Chay: netsh int ipv4 show excludedportrange protocol=tcp"
+}
+
 function Get-PythonExecutable {
     $venvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
     if (Test-Path -LiteralPath $venvPython) {
@@ -152,6 +272,9 @@ function Start-Supervisor {
         return
     }
 
+    Clear-StaleAppProcesses
+    Assert-AppPortAvailable
+
     Remove-FileIfExists -Path $SupervisorPidFile
     Remove-FileIfExists -Path $WorkerPidFile
 
@@ -180,23 +303,14 @@ function Stop-Supervisor {
     $status = Get-StatusObject
 
     if ($status.WorkerAlive) {
-        try {
-            Stop-Process -Id $status.WorkerPid -Force -ErrorAction Stop
-            Write-SupervisorLog "Stopped worker PID $($status.WorkerPid)."
-        } catch {
-            Write-SupervisorLog "Worker PID $($status.WorkerPid) could not be stopped cleanly: $($_.Exception.Message)"
-        }
+        Stop-ProcessTree -ProcessId $status.WorkerPid
     }
 
     if ($status.SupervisorAlive) {
-        try {
-            Stop-Process -Id $status.SupervisorPid -Force -ErrorAction Stop
-            Write-SupervisorLog "Stopped supervisor PID $($status.SupervisorPid)."
-        } catch {
-            Write-SupervisorLog "Supervisor PID $($status.SupervisorPid) could not be stopped cleanly: $($_.Exception.Message)"
-        }
+        Stop-ProcessTree -ProcessId $status.SupervisorPid
     }
 
+    Clear-StaleAppProcesses
     Remove-FileIfExists -Path $WorkerPidFile
     Remove-FileIfExists -Path $SupervisorPidFile
     Write-Host "Da stop app."

@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_env: str = "local"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
+    app_reload: bool = False
 
     public_base_url: str = "http://localhost"
 
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     milestone_password: str = ""
     milestone_verify_ssl: bool = False
     milestone_request_timeout_seconds: int = 20
+    milestone_health_timeout_seconds: float = 5.0
     milestone_stream_timeout_seconds: int = 60
     milestone_reconnect_delay_seconds: int = 3
     milestone_camera_cache_ttl_seconds: int = 300

@@ -158,7 +158,7 @@ class MilestoneMobileClient:
     - CloseStream: Param VideoId
     """
 
-    def __init__(self) -> None:
+    def __init__(self, request_timeout_seconds: float | None = None) -> None:
         settings = get_settings()
 
         self.base_url = settings.milestone_base_url.rstrip("/")
@@ -172,7 +172,7 @@ class MilestoneMobileClient:
             self.full_username = username
 
         self.password = settings.milestone_password
-        self.timeout = settings.milestone_request_timeout_seconds
+        self.timeout = request_timeout_seconds or settings.milestone_request_timeout_seconds
         self.stream_timeout = settings.milestone_stream_timeout_seconds
         self.verify_ssl = getattr(settings, "milestone_verify_ssl", False)
 

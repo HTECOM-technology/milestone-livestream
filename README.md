@@ -51,6 +51,8 @@ mkdir C:\thumbnails -Force
 File `.env` đã có sẵn:
 
 ```env
+APP_PORT=8000
+APP_RELOAD=false
 PUBLIC_BASE_URL=<URL_NGINX_PROXY>
 MILESTONE_BASE_URL=http://<IP_HOST_WINDOWS_SERVER>:8081
 MILESTONE_DOMAIN=VMS-ITS
@@ -90,9 +92,18 @@ cd C:\nginx
 .\nginx.exe
 ```
 
+Health check:
+
+```txt
+GET /health
+```
+
+Endpoint này trả `200` khi backend connect/login được Milestone Mobile Server, và trả `503` nếu không kết nối hoặc đăng nhập được. Có thể chỉnh timeout bằng `MILESTONE_HEALTH_TIMEOUT_SECONDS`.
+
 ## API
 
 ```txt
+GET  /health
 GET  /api/cameras?refresh=true
 POST /api/cameras/{camera_id}/watch/start
 POST /api/cameras/{camera_id}/watch/heartbeat
@@ -109,6 +120,7 @@ Heartbeat body:
 ## Lưu ý vận hành
 
 - Backend hiện dùng in-memory viewer/session/worker state.
+- `APP_RELOAD` mặc định là `false` để tránh uvicorn reload tạo process con khó stop trên Windows server. Chỉ bật `APP_RELOAD=true` khi chạy dev thủ công.
 - Có 2 Nginx chạy riêng biệt, 1 nginx nội bộ và 1 nginx public.
 - Nginx Public chỉ làm gateway/proxy.
 - Nginx nội bộ serve static HLS từ disk local, Python không serve file HLS cho user.

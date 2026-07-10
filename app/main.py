@@ -3,10 +3,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.cameras import router as cameras_router
 from app.core.config import get_settings
 from app.jobs.thumbnail_refresh import start_thumbnail_refresh_job, shutdown_thumbnail_refresh_job
+from app.services.milestone_health import check_milestone_mobile_health
 from app.services.viewer_store import viewer_store
 from app.worker_manager.manager import camera_worker_manager
 
@@ -50,7 +52,16 @@ def create_app() -> FastAPI:
 
     @app.get('/health')
     def health_check():
-        return {'status': 'ok'}
+        milestone_health = check_milestone_mobile_health()
+        is_healthy = milestone_health["status"] == "ok"
+        payload = {
+            "status": "ok" if is_healthy else "degraded",
+            "milestone_mobile_server": milestone_health,
+        }
+        return JSONResponse(
+            status_code=200 if is_healthy else 503,
+            content=payload,
+        )
 
     return app
 
