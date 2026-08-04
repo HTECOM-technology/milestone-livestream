@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     public_base_url: str = "http://localhost"
 
     milestone_base_url: str = "http://10.2.18.11:8081"
+    milestone_login_type: str = "ActiveDirectory"
     milestone_domain: str = "VMS-ITS"
     milestone_username: str = "administrator"
     milestone_password: str = ""

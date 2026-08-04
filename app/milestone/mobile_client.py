@@ -11,6 +11,11 @@ from Crypto.Util.Padding import pad
 from urllib3.exceptions import InsecureRequestWarning
 
 from app.core.config import get_settings
+from app.milestone.auth import (
+    LOGIN_TYPE_ACTIVE_DIRECTORY,
+    build_login_username,
+    normalize_login_type,
+)
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -152,7 +157,7 @@ class MilestoneMobileClient:
 
     Flow đã xác minh từ script debug:
     - Connect: gửi PublicKey + PrimeLength + EncryptionPadding
-    - LogIn: encrypt domain\\username và password bằng AES-CBC PKCS7
+    - LogIn: gửi LoginType và encrypt username/password bằng AES-CBC PKCS7
     - RequestStream: dùng ItemId là Id của camera trong GetAllViewsAndCameras
     - Video stream: GET /XProtectMobile/Video/{VideoId}
     - CloseStream: Param VideoId
@@ -164,12 +169,12 @@ class MilestoneMobileClient:
         self.base_url = settings.milestone_base_url.rstrip("/")
         self.comm_url = f"{self.base_url}/XProtectMobile/Communication"
 
+        self.login_type = normalize_login_type(
+            getattr(settings, "milestone_login_type", LOGIN_TYPE_ACTIVE_DIRECTORY)
+        )
         domain = getattr(settings, "milestone_domain", "") or ""
         username = settings.milestone_username
-        if domain and "\\" not in username:
-            self.full_username = f"{domain}\\{username}"
-        else:
-            self.full_username = username
+        self.full_username = build_login_username(self.login_type, domain, username)
 
         self.password = settings.milestone_password
         self.timeout = request_timeout_seconds or settings.milestone_request_timeout_seconds
@@ -252,6 +257,7 @@ class MilestoneMobileClient:
     <InputParams>
       <Param Name="Username" Value="{encrypted_username}" />
       <Param Name="Password" Value="{encrypted_password}" />
+      <Param Name="LoginType" Value="{self.login_type}" />
       <Param Name="SupportsResampling" Value="Yes" />
       <Param Name="SupportsExtendedResamplingFactor" Value="Yes" />
       <Param Name="ClientType" Value="WebClient" />

@@ -55,6 +55,7 @@ APP_PORT=8000
 APP_RELOAD=false
 PUBLIC_BASE_URL=<URL_NGINX_PROXY>
 MILESTONE_BASE_URL=http://<IP_HOST_WINDOWS_SERVER>:8081
+MILESTONE_LOGIN_TYPE=ActiveDirectory
 MILESTONE_DOMAIN=VMS-ITS
 MILESTONE_USERNAME=administrator
 MILESTONE_PASSWORD=something
@@ -62,6 +63,18 @@ FFMPEG_BIN=C:\nginx\ffmpeg.exe
 HLS_ROOT=C:\hls
 THUMBNAIL_ROOT=C:\thumbnails
 ```
+
+Để đăng nhập bằng **Milestone Basic user**, cấu hình:
+
+```env
+MILESTONE_LOGIN_TYPE=Basic
+MILESTONE_USERNAME=<basic-user-name>
+MILESTONE_PASSWORD=<basic-user-password>
+```
+
+Khi `MILESTONE_LOGIN_TYPE=Basic`, backend gửi `LoginType=Basic` và không ghép
+`MILESTONE_DOMAIN` vào username. Với Windows/AD user, giữ
+`MILESTONE_LOGIN_TYPE=ActiveDirectory` và cấu hình `MILESTONE_DOMAIN` như trên.
 
 ## Chạy Python backend
 

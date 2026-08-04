@@ -1,4 +1,4 @@
-"""
+r"""
 Milestone XProtect Mobile Server 2022 R1 - Worker Probe
 
 Purpose:
@@ -17,6 +17,7 @@ Recommended install:
 Example:
     python milestone_worker_probe.py ^
       --base-url http://10.2.18.16:8081 ^
+      --login-type ActiveDirectory ^
       --domain VMS-ITS ^
       --username administrator ^
       --password "YOUR_PASSWORD" ^
@@ -74,6 +75,7 @@ JPEG_EOI = b"\xff\xd9"
 @dataclass
 class ProbeConfig:
     base_url: str
+    login_type: str
     domain: str
     username: str
     password: str
@@ -330,7 +332,13 @@ class MilestoneProbeClient:
         return LoginSession(connection_id=str(connection_id), iv=iv, aes_key=aes_key)
 
     def login(self, login_session: LoginSession) -> None:
-        full_username = f"{self.cfg.domain}\\{self.cfg.username}"
+        if self.cfg.login_type == "Basic":
+            full_username = self.cfg.username
+        elif self.cfg.domain and "\\" not in self.cfg.username:
+            full_username = f"{self.cfg.domain}\\{self.cfg.username}"
+        else:
+            full_username = self.cfg.username
+
         encrypted_username = encrypt_value(full_username, login_session.aes_key, login_session.iv)
         encrypted_password = encrypt_value(self.cfg.password, login_session.aes_key, login_session.iv)
 
@@ -343,6 +351,7 @@ class MilestoneProbeClient:
     <InputParams>
       <Param Name="Username" Value="{encrypted_username}" />
       <Param Name="Password" Value="{encrypted_password}" />
+      <Param Name="LoginType" Value="{self.cfg.login_type}" />
       <Param Name="SupportsResampling" Value="Yes" />
       <Param Name="SupportsExtendedResamplingFactor" Value="Yes" />
       <Param Name="ClientType" Value="WebClient" />
@@ -736,6 +745,11 @@ def choose_camera(cameras: List[Dict[str, str]], requested: Optional[str], log: 
 def parse_args() -> ProbeConfig:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default=os.getenv("MILESTONE_BASE_URL", "http://10.2.18.11:8081"))
+    parser.add_argument(
+        "--login-type",
+        choices=["Basic", "ActiveDirectory"],
+        default=os.getenv("MILESTONE_LOGIN_TYPE", "ActiveDirectory"),
+    )
     parser.add_argument("--domain", default=os.getenv("MILESTONE_DOMAIN", "VMS-ITS"))
     parser.add_argument("--username", default=os.getenv("MILESTONE_USERNAME", "administrator"))
     parser.add_argument("--password", default=os.getenv("MILESTONE_PASSWORD", ""))
@@ -770,6 +784,7 @@ def parse_args() -> ProbeConfig:
 
     return ProbeConfig(
         base_url=args.base_url,
+        login_type=args.login_type,
         domain=args.domain,
         username=args.username,
         password=args.password,
