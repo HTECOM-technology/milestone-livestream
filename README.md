@@ -88,6 +88,31 @@ Backend mặc định listen local:
 http://127.0.0.1:8000
 ```
 
+### Chạy hai instance trên cùng một máy Windows
+
+Có thể đặt mỗi instance ở một thư mục hoặc ổ đĩa riêng. Cấu hình `.env` của
+từng instance với port khác nhau, ví dụ `APP_PORT=8000` và `APP_PORT=8001`, rồi
+chạy `setup.bat start` trong từng thư mục.
+
+Nếu hai instance có thể xử lý cùng camera, nên cấu hình `HLS_ROOT` và
+`THUMBNAIL_ROOT` riêng để tránh ghi đè file của nhau, ví dụ:
+
+```env
+# Instance 1
+APP_PORT=8000
+HLS_ROOT=C:\hls-8000
+THUMBNAIL_ROOT=C:\thumbnails-8000
+
+# Instance 2 (trong file .env của clone thứ hai)
+APP_PORT=8001
+HLS_ROOT=C:\hls-8001
+THUMBNAIL_ROOT=C:\thumbnails-8001
+```
+
+Các lệnh `start`, `status` và `stop` chỉ nhận diện process thuộc đúng thư mục
+project hiện tại; PID còn sót lại do copy thư mục sẽ không bị nhận nhầm là app
+của clone khác.
+
 Vì Windows Nginx trên cùng server sẽ proxy `/api/` vào `127.0.0.1:8000`.
 
 Test và reload:

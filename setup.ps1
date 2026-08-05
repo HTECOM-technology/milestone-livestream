@@ -69,6 +69,72 @@ function Test-ProcessAlive {
     }
 }
 
+function Get-ProcessCommandLine {
+    param([int]$ProcessId)
+
+    if ($ProcessId -le 0) {
+        return $null
+    }
+
+    try {
+        $process = Get-CimInstance Win32_Process -Filter "ProcessId=$ProcessId" -ErrorAction Stop
+        if ($process -and $process.CommandLine) {
+            return [string]$process.CommandLine
+        }
+    } catch {
+        return $null
+    }
+
+    return $null
+}
+
+function Test-CommandLineContainsPath {
+    param(
+        [string]$CommandLine,
+        [string]$Path
+    )
+
+    if ([string]::IsNullOrWhiteSpace($CommandLine) -or [string]::IsNullOrWhiteSpace($Path)) {
+        return $false
+    }
+
+    return $CommandLine.IndexOf($Path, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+
+function Test-SupervisorProcessAlive {
+    param([int]$ProcessId)
+
+    if (-not (Test-ProcessAlive -ProcessId $ProcessId)) {
+        return $false
+    }
+
+    $commandLine = Get-ProcessCommandLine -ProcessId $ProcessId
+    return (
+        (Test-CommandLineContainsPath -CommandLine $commandLine -Path $ScriptPath) -and
+        $commandLine -match '(?i)(?:^|\s)-Action\s+["'']?supervise(?:["'']?(?:\s|$))'
+    )
+}
+
+function Test-WorkerProcessAlive {
+    param([int]$ProcessId)
+
+    if (-not (Test-ProcessAlive -ProcessId $ProcessId)) {
+        return $false
+    }
+
+    $commandLine = Get-ProcessCommandLine -ProcessId $ProcessId
+    return Test-CommandLineContainsPath -CommandLine $commandLine -Path $RunPy
+}
+
+function Test-ProjectAppProcess {
+    param([int]$ProcessId)
+
+    return (
+        (Test-SupervisorProcessAlive -ProcessId $ProcessId) -or
+        (Test-WorkerProcessAlive -ProcessId $ProcessId)
+    )
+}
+
 function Remove-FileIfExists {
     param([string]$Path)
 
@@ -128,13 +194,19 @@ function Get-ListeningProcessIdsByPort {
     }
 }
 
-function Get-ProjectRunProcessIds {
+function Get-ProjectAppProcessIds {
     try {
         $processes = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
             Where-Object {
                 $_.ProcessId -ne $PID -and
                 $_.CommandLine -and
-                $_.CommandLine -like "*$RunPy*"
+                (
+                    (Test-CommandLineContainsPath -CommandLine $_.CommandLine -Path $RunPy) -or
+                    (
+                        (Test-CommandLineContainsPath -CommandLine $_.CommandLine -Path $ScriptPath) -and
+                        $_.CommandLine -match '(?i)(?:^|\s)-Action\s+["'']?supervise(?:["'']?(?:\s|$))'
+                    )
+                )
             }
 
         return @($processes | Select-Object -ExpandProperty ProcessId -Unique)
@@ -164,10 +236,13 @@ function Clear-StaleAppProcesses {
     $port = Get-ConfiguredAppPort
     $candidatePids = @()
     $candidatePids += Get-ListeningProcessIdsByPort -Port $port
-    $candidatePids += Get-ProjectRunProcessIds
+    $candidatePids += Get-ProjectAppProcessIds
 
     foreach ($candidatePid in ($candidatePids | Where-Object { $_ } | Sort-Object -Unique)) {
-        if ([int]$candidatePid -ne $PID) {
+        if (
+            [int]$candidatePid -ne $PID -and
+            (Test-ProjectAppProcess -ProcessId ([int]$candidatePid))
+        ) {
             Write-SupervisorLog "Stopping stale app process PID $candidatePid before start/stop cleanup."
             Stop-ProcessTree -ProcessId ([int]$candidatePid)
         }
@@ -249,11 +324,11 @@ function Get-StatusObject {
     $workerAlive = $false
 
     if ($supervisorPid) {
-        $supervisorAlive = Test-ProcessAlive -ProcessId $supervisorPid
+        $supervisorAlive = Test-SupervisorProcessAlive -ProcessId $supervisorPid
     }
 
     if ($workerPid) {
-        $workerAlive = Test-ProcessAlive -ProcessId $workerPid
+        $workerAlive = Test-WorkerProcessAlive -ProcessId $workerPid
     }
 
     [pscustomobject]@{
@@ -268,7 +343,8 @@ function Start-Supervisor {
     $pythonExe = Assert-Prerequisites
     $status = Get-StatusObject
     if ($status.SupervisorAlive) {
-        Write-Host "App dang chay. Supervisor PID: $($status.SupervisorPid), Worker PID: $($status.WorkerPid)"
+        $port = Get-ConfiguredAppPort
+        Write-Host "App dang chay tren port $port. Supervisor PID: $($status.SupervisorPid), Worker PID: $($status.WorkerPid)"
         return
     }
 
@@ -296,7 +372,8 @@ function Start-Supervisor {
     $process = Start-Process -FilePath $psExe -ArgumentList $arguments -WorkingDirectory $ProjectRoot -WindowStyle Hidden -PassThru
     Set-Content -Path $SupervisorPidFile -Value $process.Id
     Write-SupervisorLog "Supervisor started with PID $($process.Id) using Python $pythonExe."
-    Write-Host "Da start app nen. Supervisor PID: $($process.Id)"
+    $port = Get-ConfiguredAppPort
+    Write-Host "Da start app nen tren port $port. Supervisor PID: $($process.Id)"
 }
 
 function Stop-Supervisor {
