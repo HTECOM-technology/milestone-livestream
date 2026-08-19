@@ -429,7 +429,31 @@ async function startCameraWatch(camera) {
     return data;
 }
 
-function releaseActiveCameraWatch() {
+function stopCameraWatch(cameraId, sessionId, useBeacon = false) {
+    if (!cameraId || !sessionId) return;
+
+    const url = `${CAMERA_API_URL}/${encodeURIComponent(cameraId)}/watch/stop`;
+    const body = JSON.stringify({ session_id: sessionId });
+
+    // Khi tab đang bị đóng thì fetch thường bị hủy giữa đường, nên ưu tiên sendBeacon.
+    // sendBeacon trả false nếu queue đầy hoặc request cần preflight (cross-origin với
+    // Content-Type application/json), khi đó phải rơi xuống fetch keepalive.
+    if (useBeacon && navigator.sendBeacon) {
+        const queued = navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
+        if (queued) return;
+    }
+
+    fetch(url, {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body,
+    }).catch((error) => {
+        console.error("Camera watch stop failed:", error);
+    });
+}
+
+function releaseActiveCameraWatch(useBeacon = false) {
     if (!activeCameraSession) return;
 
     const session = activeCameraSession;
@@ -442,6 +466,10 @@ function releaseActiveCameraWatch() {
     if (session.hls) {
         session.hls.destroy();
     }
+
+    // Bắt buộc: không gọi /watch/stop thì backend chỉ biết viewer đã đi sau khi
+    // heartbeat TTL 90s hết hạn, và trong 90s đó worker vẫn giữ session Milestone.
+    stopCameraWatch(session.cameraId, session.sessionId, useBeacon);
 }
 
 function startCameraHeartbeat(cameraId, sessionId) {
@@ -563,9 +591,12 @@ async function openCameraModal(camera) {
     modal.classList.remove("hidden");
     document.body.style.overflow = "hidden";
 
+    let watchData = null;
+
     try {
-        const watchData = await startCameraWatch(camera);
+        watchData = await startCameraWatch(camera);
         if (requestId !== cameraModalRequestId) {
+            stopCameraWatch(camera.camera_id, watchData.session_id);
             return;
         }
 
@@ -573,6 +604,7 @@ async function openCameraModal(camera) {
         const hls = await attachHlsStreamWithRetry(video, watchData.hls_url);
         if (requestId !== cameraModalRequestId) {
             if (hls) hls.destroy();
+            stopCameraWatch(camera.camera_id, watchData.session_id);
             return;
         }
 
@@ -589,6 +621,9 @@ async function openCameraModal(camera) {
         video.play().catch(() => { });
     } catch (error) {
         console.error("Error opening camera:", error);
+        // watch/start đã tạo session rồi mới lỗi ở bước HLS: phải nhả, nếu không
+        // worker cứ chạy tới khi heartbeat TTL hết hạn.
+        stopCameraWatch(camera.camera_id, watchData?.session_id);
         status.textContent = "Không mở được luồng camera";
     }
 }
@@ -606,6 +641,12 @@ window.closeCameraModal = async function () {
         document.body.style.overflow = "";
     }
 }
+
+// Đóng tab, F5, chuyển trang: pagehide là event duy nhất chắc chắn chạy trên
+// cả desktop và mobile Safari, nên nhả session ở đây.
+window.addEventListener("pagehide", () => {
+    releaseActiveCameraWatch(true);
+});
 
 window.openCameraFromMap = function (cameraId) {
     const camera = cameraList?.find((item) => item.camera_id === cameraId);

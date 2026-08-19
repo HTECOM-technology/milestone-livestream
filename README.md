@@ -138,6 +138,18 @@ GET /health
 
 Endpoint này trả `200` khi backend connect/login được Milestone Mobile Server, và trả `503` nếu không kết nối hoặc đăng nhập được. Có thể chỉnh timeout bằng `MILESTONE_HEALTH_TIMEOUT_SECONDS`.
 
+Response còn hai field để kiểm tra việc huỷ session:
+
+```json
+{"milestone_mobile_server": {"logged_out": true, "logout_command": "LogOut"}}
+```
+
+`logged_out: false` nghĩa là Mobile Server không nhận lệnh huỷ session nào, và mọi
+session sẽ phải chờ server tự thu hồi bằng timeout — đó chính là các dòng
+`User Timed Out! ChannelID` trong log Mobile Server. Khi đó bổ sung tên lệnh đúng vào
+`LOGOUT_COMMAND_CANDIDATES` trong `app/milestone/mobile_client.py`; client thử lần lượt
+từng tên rồi nhớ lại tên nào server chấp nhận.
+
 ## API
 
 ```txt
@@ -161,7 +173,7 @@ Heartbeat body:
 
 - `<project>\logs\` — `app-<ts>.out.log`, `app-<ts>.err.log`, `supervisor.log`
 - `<HLS_ROOT>\` — `thumbnail_refresh.log`
-- `<HLS_ROOT>\<camera_id>\logs\` — `ffmpeg_stderr.log` của từng camera
+- `<HLS_ROOT>\<camera_id>\logs\` — `ffmpeg_stderr.log` và `worker.err.log` của từng camera
 
 Chỉ chạm file `*.log`; segment `.ts`, `index.m3u8`, `.jpg`, `worker_status.json`
 và file `.pid` không bị ảnh hưởng. File đang bị process giữ handle được bỏ qua
@@ -200,5 +212,17 @@ instance không đè lên nhau.
 - Có 2 Nginx chạy riêng biệt, 1 nginx nội bộ và 1 nginx public.
 - Nginx Public chỉ làm gateway/proxy.
 - Nginx nội bộ serve static HLS từ disk local, Python không serve file HLS cho user.
-- Worker sẽ CloseStream khi stop/reconnect.
+- Worker sẽ CloseStream khi stop/reconnect, theo thứ tự `CloseStream` → đóng socket
+  video → `ffmpeg.stop()` → `LogOut`. Đóng socket trước `CloseStream` làm Mobile Server
+  ghi `HttpListenerException: nonexistent network connection`.
+- Dừng worker trên Windows dùng `CTRL_BREAK_EVENT`, không dùng `terminate()`:
+  `terminate()` là `TerminateProcess` nên handler tín hiệu không chạy và mỗi lần stop là
+  một session Milestone bị bỏ lại. Worker có 12 giây để tự dọn trước khi bị kill cứng;
+  quá hạn thì có dòng WARNING trong log app.
+- Mỗi camera có `<HLS_ROOT>\<camera_id>\logs\worker.err.log` chứa stdout/stderr của
+  worker. Đây là chỗ duy nhất đọc được traceback khi một phiên stream chết.
+- ffmpeg của mỗi camera được ghi pid ra `<HLS_ROOT>\<camera_id>\ffmpeg.pid`; lần start
+  worker sau sẽ giết process còn sót theo pid đó, có xác thực tên process trước khi kill.
+- Frontend phải gọi `/watch/stop` khi đóng modal, đổi camera và lúc `pagehide`. Không gọi
+  thì backend chỉ biết viewer đã đi sau khi heartbeat TTL 90 giây hết hạn.
 - FFmpeg cleanup segment cũ bằng `delete_segments+omit_endlist`.

@@ -1,7 +1,9 @@
 import argparse
 import json
+import logging
 import os
 import signal
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,12 +14,43 @@ from app.ffmpeg_runtime.hls_process import FFmpegHLSProcess
 from app.milestone.jpeg_stream_reader import MilestoneJPEGStreamReader
 from app.milestone.mobile_client import MilestoneMobileClient
 
+logger = logging.getLogger(__name__)
+
 running = True
+
+# Response video đang mở của phiên hiện tại, để đánh thức reader khi cần dừng.
+_active_response = None
+
+# Sau khi nhận tín hiệu dừng, chờ bấy nhiêu giây cho vòng lặp tự thoát ở frame kế
+# tiếp (2 fps => thường dưới 0.5s). Chỉ khi stream đã tắc thì mới đóng socket, vì
+# đóng socket trước CloseStream làm Mobile Server ghi HttpListenerException.
+# Vẫn phải nhỏ hơn GRACEFUL_STOP_TIMEOUT_SECONDS của manager để kịp dọn dẹp.
+FORCE_CLOSE_STREAM_AFTER_SECONDS = 2.0
+
+
+def _force_close_active_response() -> None:
+    response = _active_response
+    if response is None:
+        return
+
+    try:
+        response.close()
+    except Exception:
+        pass
 
 
 def handle_stop(signum, frame):
     global running
     running = False
+
+    if _active_response is None:
+        return
+
+    # Reader có thể đang block trong iter_content của một stream đã chết; không đánh
+    # thức thì manager hết 12s sẽ kill cứng và session Milestone lại bị bỏ lại.
+    timer = threading.Timer(FORCE_CLOSE_STREAM_AFTER_SECONDS, _force_close_active_response)
+    timer.daemon = True
+    timer.start()
 
 
 def utc_now() -> str:
@@ -88,6 +121,8 @@ def run_once(
     log_dir: Path,
 ) -> int:
     """Chạy một phiên stream. Trả về số frame đã đọc được trong phiên đó."""
+    global _active_response
+
     settings = get_settings()
 
     client: Optional[MilestoneMobileClient] = None
@@ -124,6 +159,7 @@ def run_once(
         )
 
         response = client.open_video_stream(video_id)
+        _active_response = response
         reader = MilestoneJPEGStreamReader(response)
 
         ffmpeg = FFmpegHLSProcess(camera_id=camera_id, hls_dir=hls_dir, log_dir=log_dir)
@@ -176,14 +212,19 @@ def run_once(
             frame_count=frame_count,
         )
 
+        # Thứ tự quan trọng: CloseStream TRƯỚC khi đóng socket. Đóng socket trước
+        # thì Mobile Server vẫn đang push frame vào socket đã chết và log
+        # "HttpListenerException: nonexistent network connection".
+        if client and video_id:
+            client.close_stream(video_id)
+
         if response is not None:
             try:
                 response.close()
             except Exception:
                 pass
 
-        if client and video_id:
-            client.close_stream(video_id)
+        _active_response = None
 
         if ffmpeg:
             ffmpeg.stop()
@@ -217,8 +258,22 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    # Worker chạy như subprocess, stdout/stderr được manager ghi vào
+    # <hls_dir>/logs/worker.err.log. Không cấu hình ở đây thì chỉ WARNING trở lên
+    # được in ra, và không có timestamp để đối chiếu với log Mobile Server.
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+
     signal.signal(signal.SIGTERM, handle_stop)
     signal.signal(signal.SIGINT, handle_stop)
+
+    # Trên Windows, Popen.terminate() là TerminateProcess: không handler nào chạy,
+    # nên khối finally ở trên bị bỏ qua và session Milestone rò lại. Manager vì vậy
+    # gửi CTRL_BREAK_EVENT, tới process này dưới dạng SIGBREAK.
+    if hasattr(signal, "SIGBREAK"):
+        signal.signal(signal.SIGBREAK, handle_stop)
 
     settings = get_settings()
 
@@ -250,6 +305,9 @@ def main() -> None:
                 log_dir=log_dir,
             )
         except Exception as exc:
+            # worker_status.json chỉ giữ được repr(exc); traceback đầy đủ mới cho biết
+            # phiên stream chết ở đâu (đọc HTTP, ghi vào ffmpeg, hay RequestStream).
+            logger.exception("camera %s: phiên stream kết thúc do lỗi", camera_id)
             update_status(
                 status_path,
                 camera_id=camera_id,
@@ -270,6 +328,12 @@ def main() -> None:
             empty_sessions += 1
             delay = min(base_delay * (2 ** (empty_sessions - 1)), max_delay)
 
+        logger.info(
+            "camera %s: phiên kết thúc với %d frame, reconnect sau %.0fs",
+            camera_id,
+            frame_count,
+            delay,
+        )
         time.sleep(delay)
 
 

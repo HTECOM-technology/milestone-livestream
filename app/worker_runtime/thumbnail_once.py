@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 
 from app.core.config import get_settings
@@ -50,6 +51,11 @@ def capture_first_frame(
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--camera-id",

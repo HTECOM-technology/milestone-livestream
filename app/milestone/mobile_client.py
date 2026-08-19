@@ -1,4 +1,5 @@
 import base64
+import logging
 import random
 import time
 import xml.etree.ElementTree as ET
@@ -18,6 +19,19 @@ from app.milestone.auth import (
 )
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+logger = logging.getLogger(__name__)
+
+# Tên lệnh huỷ session không có trong tài liệu của bản 2022 R1 mà repo này probe được,
+# nên thử lần lượt. Tên nào server trả OK thì nhớ lại, các lần sau chỉ gửi đúng tên đó.
+LOGOUT_COMMAND_CANDIDATES = ("LogOut", "Disconnect")
+
+_verified_logout_command: Optional[str] = None
+
+
+def get_verified_logout_command() -> Optional[str]:
+    """Tên lệnh logout mà Mobile Server đã chấp nhận, None nếu chưa lần nào thành công."""
+    return _verified_logout_command
 
 PRIME_1024_HEX = (
     "F488FD584E49DBCD20B49DE49107366B336C380D451D0F7C88B31C7C5B2D8EF6"
@@ -189,6 +203,7 @@ class MilestoneMobileClient:
         self.sequence_id = 1
 
         self.session: Optional[MilestoneSession] = None
+        self.last_logout_command: Optional[str] = None
 
     def connect(self) -> MilestoneSession:
         private_key = random.getrandbits(160)
@@ -279,34 +294,75 @@ class MilestoneMobileClient:
                 f"error_code={parsed['error_code']}, error_text={parsed['error_text']}"
             )
 
-    def logout(self) -> bool:
-        """
-        Gửi LogOut để Mobile Server giải phóng session ngay, không chờ timeout.
-        Trả về False nếu chưa có session hoặc server không chấp nhận lệnh.
-        """
-        if not self.session:
-            return False
-
-        xml = f"""<?xml version="1.0" encoding="utf-8"?>
+    def _build_logout_xml(self, connection_id: str, command_name: str) -> str:
+        return f"""<?xml version="1.0" encoding="utf-8"?>
 <Communication xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ConnectionId>{self.session.connection_id}</ConnectionId>
+  <ConnectionId>{connection_id}</ConnectionId>
   <Command SequenceId="{self._next_sequence()}">
     <Type>Request</Type>
-    <Name>LogOut</Name>
+    <Name>{command_name}</Name>
     <InputParams />
     <OutputParams />
   </Command>
 </Communication>"""
 
+    def logout(self) -> bool:
+        """
+        Huỷ session để Mobile Server nhả ngay thay vì chờ timeout (mỗi session bị bỏ
+        lại thành một dòng "User Timed Out! ChannelID" trong log Mobile Server).
+
+        Thử lần lượt LOGOUT_COMMAND_CANDIDATES cho tới khi server trả OK, rồi nhớ tên
+        đó cho toàn process. Trả về False nếu chưa có session hoặc không tên nào chạy;
+        khi đó tên command đã ghi vào log ở mức WARNING để xử lý được.
+        """
+        global _verified_logout_command
+
+        if not self.session:
+            return False
+
+        connection_id = self.session.connection_id
+        candidates = (
+            (_verified_logout_command,)
+            if _verified_logout_command
+            else LOGOUT_COMMAND_CANDIDATES
+        )
+
         try:
-            text = self._post_xml(xml)
-            result = extract_params(text)["result"]
-        except Exception:
+            for command_name in candidates:
+                try:
+                    text = self._post_xml(self._build_logout_xml(connection_id, command_name))
+                    parsed = extract_params(text)
+                except Exception as exc:
+                    logger.warning(
+                        "Milestone %s lỗi khi gửi: %r",
+                        command_name,
+                        exc,
+                    )
+                    continue
+
+                if parsed["result"] == "OK":
+                    if _verified_logout_command != command_name:
+                        logger.info("Milestone chấp nhận lệnh huỷ session: %s", command_name)
+                    _verified_logout_command = command_name
+                    self.last_logout_command = command_name
+                    return True
+
+                logger.warning(
+                    "Milestone từ chối %s: result=%s, error_code=%s, error_text=%s",
+                    command_name,
+                    parsed["result"],
+                    parsed["error_code"],
+                    parsed["error_text"],
+                )
+
+            logger.warning(
+                "Không huỷ được session Milestone (%s đều thất bại); server sẽ phải "
+                "tự thu hồi bằng timeout",
+                ", ".join(candidates),
+            )
             return False
         finally:
             self.session = None
-
-        return result == "OK"
 
     def connect_and_login(self) -> None:
         self.connect()

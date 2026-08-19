@@ -2,7 +2,10 @@ import threading
 import time
 
 from app.core.config import get_settings
-from app.milestone.mobile_client import MilestoneMobileClient
+from app.milestone.mobile_client import (
+    LOGOUT_COMMAND_CANDIDATES,
+    MilestoneMobileClient,
+)
 
 # Serialize + cache health probe: nhiều request /health đồng thời hoặc dồn dập
 # không được biến thành nhiều lần login vào Milestone.
@@ -42,6 +45,9 @@ def _probe() -> dict:
         "base_url": settings.milestone_base_url.rstrip("/"),
         "elapsed_ms": elapsed_ms,
         "logged_out": logged_out,
+        # Tên lệnh đã huỷ được session, hoặc danh sách đã thử nếu không tên nào chạy.
+        "logout_command": client.last_logout_command
+        or f"none of {list(LOGOUT_COMMAND_CANDIDATES)}",
     }
 
 
