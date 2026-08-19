@@ -42,7 +42,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ScriptFile = $MyInvocation.MyCommand.Path
+$ScriptFile = $PSCommandPath
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $ProjectName = Split-Path -Leaf $ProjectRoot
 $EnvFile = Join-Path $ProjectRoot ".env"
@@ -261,7 +261,7 @@ function Install-ClearLogsTask {
 
 function Uninstall-ClearLogsTask {
     if (-not (Get-Command Get-ScheduledTask -ErrorAction SilentlyContinue)) {
-        throw "PowerShell nay khong co module ScheduledTasks. Dung: schtasks /Delete /TN \"$TaskName\" /F"
+        throw "PowerShell nay khong co module ScheduledTasks. Dung: schtasks /Delete /TN `"$TaskName`" /F"
     }
 
     $existing = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
@@ -276,7 +276,7 @@ function Uninstall-ClearLogsTask {
 
 function Show-ClearLogsTaskStatus {
     if (-not (Get-Command Get-ScheduledTask -ErrorAction SilentlyContinue)) {
-        Write-Host "PowerShell nay khong co module ScheduledTasks. Dung: schtasks /Query /TN \"$TaskName\""
+        Write-Host "PowerShell nay khong co module ScheduledTasks. Dung: schtasks /Query /TN `"$TaskName`""
         return
     }
 
