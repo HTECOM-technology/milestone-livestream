@@ -155,6 +155,44 @@ Heartbeat body:
 {"session_id":"..."}
 ```
 
+## Dọn log tự động (00:00 hàng ngày)
+
+`scripts/clear_old_logs.ps1` xoá file `*.log` quá 3 ngày ở 3 nơi:
+
+- `<project>\logs\` — `app-<ts>.out.log`, `app-<ts>.err.log`, `supervisor.log`
+- `<HLS_ROOT>\` — `thumbnail_refresh.log`
+- `<HLS_ROOT>\<camera_id>\logs\` — `ffmpeg_stderr.log` của từng camera
+
+Chỉ chạm file `*.log`; segment `.ts`, `index.m3u8`, `.jpg`, `worker_status.json`
+và file `.pid` không bị ảnh hưởng. File đang bị process giữ handle được bỏ qua
+và ghi vào `logs\clear_old_logs.log`, không làm task fail.
+
+Đăng ký task (chạy PowerShell as Administrator, làm riêng trong từng thư mục
+instance vì `HLS_ROOT` đọc từ `.env` của chính instance đó):
+
+```powershell
+cd C:\hld-its\hld_livestream
+.\scripts\clear_old_logs.ps1 -Install
+
+cd C:\cgnb-its\cgnb_livestream
+.\scripts\clear_old_logs.ps1 -Install
+```
+
+Task name là `MilestoneLivestream-ClearLogs-<tên thư mục project>` nên hai
+instance không đè lên nhau.
+
+```powershell
+.\scripts\clear_old_logs.ps1 -Days 3 -WhatIf   # chạy thử, chỉ in ra file sẽ xoá
+.\scripts\clear_old_logs.ps1                   # dọn ngay, không cần task
+.\scripts\clear_old_logs.ps1 -Status           # xem next run / last result
+.\scripts\clear_old_logs.ps1 -Uninstall        # bỏ task
+```
+
+`supervisor.log` và `ffmpeg_stderr.log` được append liên tục nên theo
+`LastWriteTime` chúng không bao giờ "quá 3 ngày". Vì vậy file `*.log` vượt
+`-RotateOverMB` (mặc định 20 MB) sẽ được đổi tên thành `<tên>-<timestamp>.log`
+để bắt đầu già đi rồi bị xoá ở các lần chạy sau. Đặt `-RotateOverMB 0` để tắt.
+
 ## Lưu ý vận hành
 
 - Backend hiện dùng in-memory viewer/session/worker state.
