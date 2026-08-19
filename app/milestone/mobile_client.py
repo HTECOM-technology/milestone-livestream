@@ -163,7 +163,11 @@ class MilestoneMobileClient:
     - CloseStream: Param VideoId
     """
 
-    def __init__(self, request_timeout_seconds: float | None = None) -> None:
+    def __init__(
+        self,
+        request_timeout_seconds: float | None = None,
+        stream_timeout_seconds: float | None = None,
+    ) -> None:
         settings = get_settings()
 
         self.base_url = settings.milestone_base_url.rstrip("/")
@@ -178,7 +182,7 @@ class MilestoneMobileClient:
 
         self.password = settings.milestone_password
         self.timeout = request_timeout_seconds or settings.milestone_request_timeout_seconds
-        self.stream_timeout = settings.milestone_stream_timeout_seconds
+        self.stream_timeout = stream_timeout_seconds or settings.milestone_stream_timeout_seconds
         self.verify_ssl = getattr(settings, "milestone_verify_ssl", False)
 
         self.http = requests.Session()
@@ -274,6 +278,35 @@ class MilestoneMobileClient:
                 f"LogIn failed. result={parsed['result']}, "
                 f"error_code={parsed['error_code']}, error_text={parsed['error_text']}"
             )
+
+    def logout(self) -> bool:
+        """
+        Gửi LogOut để Mobile Server giải phóng session ngay, không chờ timeout.
+        Trả về False nếu chưa có session hoặc server không chấp nhận lệnh.
+        """
+        if not self.session:
+            return False
+
+        xml = f"""<?xml version="1.0" encoding="utf-8"?>
+<Communication xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ConnectionId>{self.session.connection_id}</ConnectionId>
+  <Command SequenceId="{self._next_sequence()}">
+    <Type>Request</Type>
+    <Name>LogOut</Name>
+    <InputParams />
+    <OutputParams />
+  </Command>
+</Communication>"""
+
+        try:
+            text = self._post_xml(xml)
+            result = extract_params(text)["result"]
+        except Exception:
+            return False
+        finally:
+            self.session = None
+
+        return result == "OK"
 
     def connect_and_login(self) -> None:
         self.connect()
@@ -409,6 +442,12 @@ class MilestoneMobileClient:
             pass
 
     def close(self) -> None:
+        """
+        Đóng client: LogOut trước để Mobile Server nhả session ngay, rồi đóng HTTP session.
+        Nhờ vậy mọi call site chỉ cần gọi close() trong finally là không còn session rác.
+        Nếu đang có video stream thì phải close_stream() trước khi gọi close().
+        """
+        self.logout()
         self.http.close()
 
     def _post_xml(self, xml_body: str) -> str:

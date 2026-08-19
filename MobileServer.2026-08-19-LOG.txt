@@ -1,0 +1,339 @@
+2026-08-19;12:33:41 PM;Info;PluginManager.Start();Stopped HTTP communication channel on port: 8081
+2026-08-19;12:33:41 PM;Info;PluginManager.Start();Stopped HTTP_DEFAULT communication channel on port: 8081
+2026-08-19;12:33:41 PM;-------------------------- Session End
+2026-08-19;12:40:06 PM;-------------------------- Version;22.1.5403.1
+2026-08-19;12:40:06 PM;Local time is now: 12:40:06 PM;Time Zone: UTC+07:00
+2026-08-19;12:40:06 PM;LogLevel set to: Info
+2026-08-19;12:40:06 PM;LogLevel set to: Info
+2026-08-19;12:40:06 PM;Info;Server;Service is starting
+2026-08-19;12:40:06 PM;Info;Server;Service is started
+2026-08-19;12:40:09 PM;Info;HasCompatibleNvidia;Compatible hardware found: False
+2026-08-19;12:40:09 PM;Info;IsForkingEnabled;Adaptive streaming is enabled - thus disabling forking
+2026-08-19;12:40:09 PM;Info;IsForkingEnabled;ToolkitForkingEnabled: False
+2026-08-19;12:40:11 PM;Info;InitializeFromSiteItem;Server sub type: 480, Code base: 2, Version string: 22.1.0.1
+2026-08-19;12:40:11 PM;Info;LicenseWrapper;Login is True
+2026-08-19;12:40:11 PM;Info;MipSdkWrapper.CheckSettings();Number of read configurations: 2
+2026-08-19;12:40:11 PM;Info;MipSdkWrapper.GetConfigurationByServerId();Settings has been found.
+2026-08-19;12:40:11 PM;Info;Main thread;Current Culture: en-US
+2026-08-19;12:40:11 PM;Info;Main thread;Current UI Culture: en-US
+2026-08-19;12:40:11 PM;Info;AviCodecList.PrintCodecList;Start Codec List
+2026-08-19;12:40:11 PM;Info;AviCodecList.PrintCodecList;Intel IYUV codec
+2026-08-19;12:40:11 PM;Info;AviCodecList.PrintCodecList;Microsoft RLE
+2026-08-19;12:40:11 PM;Info;AviCodecList.PrintCodecList;Microsoft Video 1
+2026-08-19;12:40:11 PM;Info;AviCodecList.PrintCodecList;Microsoft YUV
+2026-08-19;12:40:11 PM;Info;AviCodecList.PrintCodecList;End Codec List
+2026-08-19;12:40:12 PM;Info;InitFromConfigSettings;outgoingAudioEnabled is True
+2026-08-19;12:40:12 PM;Info;InitFromConfigSettings;incomingAudioEnabled is True
+2026-08-19;12:40:12 PM;Error;System.ServiceModel.FaultException`1[VideoOS.EventServer.Communication.AlarmSecurity.Client.AlarmSecurityServiceFault]: Unhandled exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.QueryRoleMemebers(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetUsersFromRole(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetAllUsers()
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.<GetAllUsers>b__7_0(IUser user)
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.GetAllUsers();
+Server stack trace: 
+   at System.ServiceModel.Channels.ServiceChannel.HandleReply(ProxyOperationRuntime operation, ProxyRpc& rpc)
+   at System.ServiceModel.Channels.ServiceChannel.Call(String action, Boolean oneway, ProxyOperationRuntime operation, Object[] ins, Object[] outs, TimeSpan timeout)
+   at System.ServiceModel.Channels.ServiceChannelProxy.InvokeService(IMethodCallMessage methodCall, ProxyOperationRuntime operation)
+   at System.ServiceModel.Channels.ServiceChannelProxy.Invoke(IMessage message)
+
+Exception rethrown at [0]: 
+   at System.Runtime.Remoting.Proxies.RealProxy.HandleReturnMessage(IMessage reqMsg, IMessage retMsg)
+   at System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(MessageData& msgData, Int32 type)
+   at VideoOS.EventServer.Communication.AlarmSecurity.Client.IAlarmSecurity.GetAllUsers()
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.<>c.<GetAllUsers>b__7_0(AlarmSecurityClient client)
+   at VideoOS.EventServer.Communication.ClientPool`1.CallWithRetry[TRet](Func`2 method, Int32 retryCount)
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.GetAllUsers()
+   at VideoOS.Mobile.Management.AlarmSecurityManager.<TryRefreshUsers>b__9_0()
+2026-08-19;12:40:12 PM;Info;AlarmSecurityManager.TryRefreshUsers;All users list updated.
+2026-08-19;12:40:12 PM;Error;EntryManagerHelper.LoadFromFileStructure;Could not find a part of the path 'C:\ProgramData\Milestone\XProtect Mobile Server\Exports\Investigations'.
+2026-08-19;12:40:12 PM;Error;ExportWorkFolder.SetExportFolderToSecure;SetDirectoryAccessControl: Failed to set access control for C:\ProgramData\Milestone\XProtect Mobile Server\Exports, Exception: Attempted to perform an unauthorized operation.
+2026-08-19;12:40:12 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:40:13 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:40:14 PM;Error;HeartbeatProvider.ProcessHeartbeatResponse;Invalid license reported. Notifications will be disabled.
+2026-08-19;12:40:14 PM;Error;HeartbeatProvider.ProcessHeartbeatResponse;Invalid license reported. Notifications will be disabled.
+2026-08-19;12:40:14 PM;Info;PluginManager.Start();Initialized HTTP communication channel on port: 8081
+2026-08-19;12:40:14 PM;Info;PluginManager.Start();Initialized HTTP_DEFAULT communication channel on port: 8081
+2026-08-19;12:40:42 PM;Info;InitializeFromSiteItem;Server sub type: 480, Code base: 2, Version string: 22.1.0.1
+2026-08-19;12:40:42 PM;Error;System.ServiceModel.FaultException`1[VideoOS.EventServer.Communication.AlarmSecurity.Client.AlarmSecurityServiceFault]: Unhandled exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.QueryRoleMemebers(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetUsersFromRole(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetAllUsers()
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.<GetAllUsers>b__7_0(IUser user)
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.GetAllUsers();
+Server stack trace: 
+   at System.ServiceModel.Channels.ServiceChannel.HandleReply(ProxyOperationRuntime operation, ProxyRpc& rpc)
+   at System.ServiceModel.Channels.ServiceChannel.Call(String action, Boolean oneway, ProxyOperationRuntime operation, Object[] ins, Object[] outs, TimeSpan timeout)
+   at System.ServiceModel.Channels.ServiceChannelProxy.InvokeService(IMethodCallMessage methodCall, ProxyOperationRuntime operation)
+   at System.ServiceModel.Channels.ServiceChannelProxy.Invoke(IMessage message)
+
+Exception rethrown at [0]: 
+   at System.Runtime.Remoting.Proxies.RealProxy.HandleReturnMessage(IMessage reqMsg, IMessage retMsg)
+   at System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(MessageData& msgData, Int32 type)
+   at VideoOS.EventServer.Communication.AlarmSecurity.Client.IAlarmSecurity.GetAllUsers()
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.<>c.<GetAllUsers>b__7_0(AlarmSecurityClient client)
+   at VideoOS.EventServer.Communication.ClientPool`1.CallWithRetry[TRet](Func`2 method, Int32 retryCount)
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.GetAllUsers()
+   at VideoOS.Mobile.Management.AlarmSecurityManager.<TryRefreshUsers>b__9_0()
+2026-08-19;12:40:42 PM;Info;AlarmSecurityManager.TryRefreshUsers;All users list updated.
+2026-08-19;12:40:42 PM;Info;LicenseWrapper;Login is True
+2026-08-19;12:40:42 PM;Info;MipSdkWrapper.CheckSettings();Number of read configurations: 2
+2026-08-19;12:40:42 PM;Info;MipSdkWrapper.GetConfigurationByServerId();Settings has been found.
+2026-08-19;12:40:42 PM;Info;Main thread;Current Culture: en-US
+2026-08-19;12:40:42 PM;Info;Main thread;Current UI Culture: en-US
+2026-08-19;12:40:42 PM;Info;InitFromConfigSettings;outgoingAudioEnabled is True
+2026-08-19;12:40:42 PM;Info;InitFromConfigSettings;incomingAudioEnabled is True
+2026-08-19;12:40:42 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:40:42 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:45:43 PM;Info;InitializeFromSiteItem;Server sub type: 480, Code base: 2, Version string: 22.1.0.1
+2026-08-19;12:45:43 PM;Info;LicenseWrapper;Login is True
+2026-08-19;12:45:43 PM;Info;MipSdkWrapper.CheckSettings();Number of read configurations: 2
+2026-08-19;12:45:43 PM;Info;MipSdkWrapper.GetConfigurationByServerId();Settings has been found.
+2026-08-19;12:45:43 PM;Info;Main thread;Current Culture: en-US
+2026-08-19;12:45:43 PM;Info;Main thread;Current UI Culture: en-US
+2026-08-19;12:45:43 PM;Info;InitFromConfigSettings;outgoingAudioEnabled is True
+2026-08-19;12:45:43 PM;Info;InitFromConfigSettings;incomingAudioEnabled is True
+2026-08-19;12:45:43 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:45:43 PM;Error;System.ServiceModel.FaultException`1[VideoOS.EventServer.Communication.AlarmSecurity.Client.AlarmSecurityServiceFault]: Unhandled exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.QueryRoleMemebers(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetUsersFromRole(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetAllUsers()
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.<GetAllUsers>b__7_0(IUser user)
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.GetAllUsers();
+Server stack trace: 
+   at System.ServiceModel.Channels.ServiceChannel.HandleReply(ProxyOperationRuntime operation, ProxyRpc& rpc)
+   at System.ServiceModel.Channels.ServiceChannel.Call(String action, Boolean oneway, ProxyOperationRuntime operation, Object[] ins, Object[] outs, TimeSpan timeout)
+   at System.ServiceModel.Channels.ServiceChannelProxy.InvokeService(IMethodCallMessage methodCall, ProxyOperationRuntime operation)
+   at System.ServiceModel.Channels.ServiceChannelProxy.Invoke(IMessage message)
+
+Exception rethrown at [0]: 
+   at System.Runtime.Remoting.Proxies.RealProxy.HandleReturnMessage(IMessage reqMsg, IMessage retMsg)
+   at System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(MessageData& msgData, Int32 type)
+   at VideoOS.EventServer.Communication.AlarmSecurity.Client.IAlarmSecurity.GetAllUsers()
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.<>c.<GetAllUsers>b__7_0(AlarmSecurityClient client)
+   at VideoOS.EventServer.Communication.ClientPool`1.CallWithRetry[TRet](Func`2 method, Int32 retryCount)
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.GetAllUsers()
+   at VideoOS.Mobile.Management.AlarmSecurityManager.<TryRefreshUsers>b__9_0()
+2026-08-19;12:45:43 PM;Info;AlarmSecurityManager.TryRefreshUsers;All users list updated.
+2026-08-19;12:45:43 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:50:43 PM;Info;InitializeFromSiteItem;Server sub type: 480, Code base: 2, Version string: 22.1.0.1
+2026-08-19;12:50:43 PM;Info;LicenseWrapper;Login is True
+2026-08-19;12:50:43 PM;Info;MipSdkWrapper.CheckSettings();Number of read configurations: 2
+2026-08-19;12:50:43 PM;Info;MipSdkWrapper.GetConfigurationByServerId();Settings has been found.
+2026-08-19;12:50:43 PM;Info;Main thread;Current Culture: en-US
+2026-08-19;12:50:43 PM;Info;Main thread;Current UI Culture: en-US
+2026-08-19;12:50:43 PM;Info;InitFromConfigSettings;outgoingAudioEnabled is True
+2026-08-19;12:50:43 PM;Info;InitFromConfigSettings;incomingAudioEnabled is True
+2026-08-19;12:50:43 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:50:43 PM;Error;System.ServiceModel.FaultException`1[VideoOS.EventServer.Communication.AlarmSecurity.Client.AlarmSecurityServiceFault]: Unhandled exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.QueryRoleMemebers(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetUsersFromRole(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetAllUsers()
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.<GetAllUsers>b__7_0(IUser user)
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.GetAllUsers();
+Server stack trace: 
+   at System.ServiceModel.Channels.ServiceChannel.HandleReply(ProxyOperationRuntime operation, ProxyRpc& rpc)
+   at System.ServiceModel.Channels.ServiceChannel.Call(String action, Boolean oneway, ProxyOperationRuntime operation, Object[] ins, Object[] outs, TimeSpan timeout)
+   at System.ServiceModel.Channels.ServiceChannelProxy.InvokeService(IMethodCallMessage methodCall, ProxyOperationRuntime operation)
+   at System.ServiceModel.Channels.ServiceChannelProxy.Invoke(IMessage message)
+
+Exception rethrown at [0]: 
+   at System.Runtime.Remoting.Proxies.RealProxy.HandleReturnMessage(IMessage reqMsg, IMessage retMsg)
+   at System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(MessageData& msgData, Int32 type)
+   at VideoOS.EventServer.Communication.AlarmSecurity.Client.IAlarmSecurity.GetAllUsers()
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.<>c.<GetAllUsers>b__7_0(AlarmSecurityClient client)
+   at VideoOS.EventServer.Communication.ClientPool`1.CallWithRetry[TRet](Func`2 method, Int32 retryCount)
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.GetAllUsers()
+   at VideoOS.Mobile.Management.AlarmSecurityManager.<TryRefreshUsers>b__9_0()
+2026-08-19;12:50:43 PM;Info;AlarmSecurityManager.TryRefreshUsers;All users list updated.
+2026-08-19;12:50:43 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:53:22 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:53:22 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:53:23 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:53:23 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:53:23 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:53:26 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:53:26 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:53:26 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:53:26 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:53:26 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:53:27 PM;Info;VideoChannelOut.ProcessSourceResolution;Source resolution changed to: 1920 x 1080
+2026-08-19;12:53:54 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: 7a362092-a717-463e-8cec-14d51a7efe25
+2026-08-19;12:55:44 PM;Info;InitializeFromSiteItem;Server sub type: 480, Code base: 2, Version string: 22.1.0.1
+2026-08-19;12:55:44 PM;Error;System.ServiceModel.FaultException`1[VideoOS.EventServer.Communication.AlarmSecurity.Client.AlarmSecurityServiceFault]: Unhandled exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.QueryRoleMemebers(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetUsersFromRole(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetAllUsers()
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.<GetAllUsers>b__7_0(IUser user)
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.GetAllUsers();
+Server stack trace: 
+   at System.ServiceModel.Channels.ServiceChannel.HandleReply(ProxyOperationRuntime operation, ProxyRpc& rpc)
+   at System.ServiceModel.Channels.ServiceChannel.Call(String action, Boolean oneway, ProxyOperationRuntime operation, Object[] ins, Object[] outs, TimeSpan timeout)
+   at System.ServiceModel.Channels.ServiceChannelProxy.InvokeService(IMethodCallMessage methodCall, ProxyOperationRuntime operation)
+   at System.ServiceModel.Channels.ServiceChannelProxy.Invoke(IMessage message)
+
+Exception rethrown at [0]: 
+   at System.Runtime.Remoting.Proxies.RealProxy.HandleReturnMessage(IMessage reqMsg, IMessage retMsg)
+   at System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(MessageData& msgData, Int32 type)
+   at VideoOS.EventServer.Communication.AlarmSecurity.Client.IAlarmSecurity.GetAllUsers()
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.<>c.<GetAllUsers>b__7_0(AlarmSecurityClient client)
+   at VideoOS.EventServer.Communication.ClientPool`1.CallWithRetry[TRet](Func`2 method, Int32 retryCount)
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.GetAllUsers()
+   at VideoOS.Mobile.Management.AlarmSecurityManager.<TryRefreshUsers>b__9_0()
+2026-08-19;12:55:44 PM;Info;AlarmSecurityManager.TryRefreshUsers;All users list updated.
+2026-08-19;12:55:44 PM;Info;LicenseWrapper;Login is True
+2026-08-19;12:55:44 PM;Info;MipSdkWrapper.CheckSettings();Number of read configurations: 2
+2026-08-19;12:55:44 PM;Info;MipSdkWrapper.GetConfigurationByServerId();Settings has been found.
+2026-08-19;12:55:44 PM;Info;Main thread;Current Culture: en-US
+2026-08-19;12:55:44 PM;Info;Main thread;Current UI Culture: en-US
+2026-08-19;12:55:44 PM;Info;InitFromConfigSettings;outgoingAudioEnabled is True
+2026-08-19;12:55:44 PM;Info;InitFromConfigSettings;incomingAudioEnabled is True
+2026-08-19;12:55:44 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:55:44 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;12:55:57 PM;Error;HttpListenerAsync.ListenerCallback;The I/O operation has been aborted because of either a thread exit or an application request
+2026-08-19;12:55:57 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: 0ef8afdb-8afd-485f-8858-f3ab477466fe
+2026-08-19;12:55:57 PM;Info;CommunicationManager.CheckForDefragmentedMemory();GCLargeObjectHeapCompactionMode.CompactOnce
+2026-08-19;12:56:00 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:56:00 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:56:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:56:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:56:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:56:01 PM;Info;VideoChannelOut.ProcessSourceResolution;Source resolution changed to: 1920 x 1080
+2026-08-19;12:56:34 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:56:34 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:56:35 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:56:35 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:56:35 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;12:56:35 PM;Info;VideoChannelOut.ProcessSourceResolution;Source resolution changed to: 1920 x 1080
+2026-08-19;12:57:26 PM;Error;BaseCommunicatonChannel.EntryResponce;An operation was attempted on a nonexistent network connection
+2026-08-19;12:57:52 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:57:52 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:58:31 PM;Error;HttpListenerAsync.ListenerCallback;The I/O operation has been aborted because of either a thread exit or an application request
+2026-08-19;12:58:31 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: e861db72-a129-424b-967e-e140399bcde9
+2026-08-19;12:58:41 PM;Error;System.Net.HttpListenerException: An operation was attempted on a nonexistent network connection;   at System.Net.HttpResponseStream.Write(Byte[] buffer, Int32 offset, Int32 size)
+   at VideoOS.Mobile.Server.Service.WebSockets.CommunicationContextHttp.WriteData(Byte[] data, Int32 start, Int32 count, Boolean endOfMessage)
+   at VideoOS.Mobile.Server.Service.VideoChannel.Base.BaseStreamChannelOut`1.OnStreamData(OnData onData, TData streamData, Object events, OnCalculatedLength onCalculatedLength)
+   at VideoOS.Mobile.Server.Service.VideoChannel.Base.BaseStreamChannelOut`1.OnStreamData(OnData outputStream, IEnumerable`1 streamData, Object events, OnCalculatedLength onCalculatedLength)
+   at VideoOS.Mobile.Server.Service.VideoChannel.HTTP.HttpTransportChannelVideoOut`1.OnStreamData(Object sender, IEnumerable`1 streamData, Object events)
+2026-08-19;12:58:42 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:58:42 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;12:58:55 PM;Error;BaseCommunicatonChannel.EntryResponce;An operation was attempted on a nonexistent network connection
+2026-08-19;12:58:56 PM;Info;<CheckDataChannelsTimeout>b__0;Data channel is closing due to timeout;fe0257dd-b901-497b-a900-a73d3c4b8bd9
+2026-08-19;12:58:56 PM;Error;HttpListenerAsync.ListenerCallback;The I/O operation has been aborted because of either a thread exit or an application request
+2026-08-19;12:58:56 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: 83e5384e-0da6-4c77-84fd-a6dec5581986
+2026-08-19;12:59:02 PM;Error;BaseCommunicatonChannel.EntryResponce;An operation was attempted on a nonexistent network connection
+2026-08-19;12:59:52 PM;Error;BaseCommunicatonChannel.EntryResponce;An operation was attempted on a nonexistent network connection
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:01 PM;Error;HttpCommunicationChannel.IsActive;Http request has been closed by peer
+2026-08-19;1:00:01 PM;Error;HttpCommunicationChannel.IsActive;Http request has been closed by peer
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;1:00:01 PM;Info;LicenseWrapper;CheckTwoStepVerification is False
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Error;HttpCommunicationChannel.IsActive;Http request has been closed by peer
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Error;HttpCommunicationChannel.IsActive;Http request has been closed by peer
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;LicenseWrapper;CheckBookmarks is True
+2026-08-19;1:00:02 PM;Info;VideoChannelOut.ProcessSourceResolution;Source resolution changed to: 1920 x 1080
+2026-08-19;1:00:02 PM;Info;VideoChannelOut.ProcessSourceResolution;Source resolution changed to: 1920 x 1080
+2026-08-19;1:00:31 PM;Error;System.Net.HttpListenerException: An operation was attempted on a nonexistent network connection;   at System.Net.HttpResponseStream.Write(Byte[] buffer, Int32 offset, Int32 size)
+   at VideoOS.Mobile.Server.Service.WebSockets.CommunicationContextHttp.WriteData(Byte[] data, Int32 start, Int32 count, Boolean endOfMessage)
+   at VideoOS.Mobile.Server.Service.VideoChannel.Base.BaseStreamChannelOut`1.OnStreamData(OnData onData, TData streamData, Object events, OnCalculatedLength onCalculatedLength)
+   at VideoOS.Mobile.Server.Service.VideoChannel.Base.BaseStreamChannelOut`1.OnStreamData(OnData outputStream, IEnumerable`1 streamData, Object events, OnCalculatedLength onCalculatedLength)
+   at VideoOS.Mobile.Server.Service.VideoChannel.HTTP.HttpTransportChannelVideoOut`1.OnStreamData(Object sender, IEnumerable`1 streamData, Object events)
+2026-08-19;1:00:32 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: 2281e2ef-970f-470e-8026-73907a2e5090
+2026-08-19;1:00:32 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: 5d696d77-2b5d-4186-a080-5ed858e2da07
+2026-08-19;1:00:32 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: 5741ead8-c3b2-4be6-8004-a649039948d0
+2026-08-19;1:00:32 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: 3803328d-8dfb-499e-b9a2-ed465d664a81
+2026-08-19;1:00:46 PM;Info;<CheckDataChannelsTimeout>b__0;Data channel is closing due to timeout;96658b6f-a650-4103-961c-7d95f7c2c99f
+2026-08-19;1:00:46 PM;Error;HttpListenerAsync.ListenerCallback;The I/O operation has been aborted because of either a thread exit or an application request
+2026-08-19;1:00:46 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: 1c8ea06d-7406-4b5f-8e2b-f8cbb5477574
+2026-08-19;1:00:51 PM;Error;System.Net.HttpListenerException: An operation was attempted on a nonexistent network connection;   at System.Net.HttpResponseStream.Write(Byte[] buffer, Int32 offset, Int32 size)
+   at VideoOS.Mobile.Server.Service.WebSockets.CommunicationContextHttp.WriteData(Byte[] data, Int32 start, Int32 count, Boolean endOfMessage)
+   at VideoOS.Mobile.Server.Service.VideoChannel.Base.BaseStreamChannelOut`1.OnStreamData(OnData onData, TData streamData, Object events, OnCalculatedLength onCalculatedLength)
+   at VideoOS.Mobile.Server.Service.VideoChannel.Base.BaseStreamChannelOut`1.OnStreamData(OnData outputStream, IEnumerable`1 streamData, Object events, OnCalculatedLength onCalculatedLength)
+   at VideoOS.Mobile.Server.Service.VideoChannel.HTTP.HttpTransportChannelVideoOut`1.OnStreamData(Object sender, IEnumerable`1 streamData, Object events)
+2026-08-19;1:01:06 PM;Info;<CheckDataChannelsTimeout>b__0;Data channel is closing due to timeout;8093fc5a-a7f2-4c7f-bb59-44c006a570bb
+2026-08-19;1:01:06 PM;Error;HttpListenerAsync.ListenerCallback;The I/O operation has been aborted because of either a thread exit or an application request
+2026-08-19;1:01:06 PM;Info;CommunicationManager.CheckConnectionsAreAlive();User Timed Out! ChannelID: d59efad0-696c-4d8e-b295-45bef0152dfe
+2026-08-19;1:01:06 PM;Info;CommunicationManager.CheckForDefragmentedMemory();GCLargeObjectHeapCompactionMode.CompactOnce
+2026-08-19;1:01:09 PM;Info;InitializeFromSiteItem;Server sub type: 480, Code base: 2, Version string: 22.1.0.1
+2026-08-19;1:01:09 PM;Error;System.ServiceModel.FaultException`1[VideoOS.EventServer.Communication.AlarmSecurity.Client.AlarmSecurityServiceFault]: Unhandled exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.QueryRoleMemebers(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetUsersFromRole(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetAllUsers()
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.<GetAllUsers>b__7_0(IUser user)
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.GetAllUsers();
+Server stack trace: 
+   at System.ServiceModel.Channels.ServiceChannel.HandleReply(ProxyOperationRuntime operation, ProxyRpc& rpc)
+   at System.ServiceModel.Channels.ServiceChannel.Call(String action, Boolean oneway, ProxyOperationRuntime operation, Object[] ins, Object[] outs, TimeSpan timeout)
+   at System.ServiceModel.Channels.ServiceChannelProxy.InvokeService(IMethodCallMessage methodCall, ProxyOperationRuntime operation)
+   at System.ServiceModel.Channels.ServiceChannelProxy.Invoke(IMessage message)
+
+Exception rethrown at [0]: 
+   at System.Runtime.Remoting.Proxies.RealProxy.HandleReturnMessage(IMessage reqMsg, IMessage retMsg)
+   at System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(MessageData& msgData, Int32 type)
+   at VideoOS.EventServer.Communication.AlarmSecurity.Client.IAlarmSecurity.GetAllUsers()
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.<>c.<GetAllUsers>b__7_0(AlarmSecurityClient client)
+   at VideoOS.EventServer.Communication.ClientPool`1.CallWithRetry[TRet](Func`2 method, Int32 retryCount)
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.GetAllUsers()
+   at VideoOS.Mobile.Management.AlarmSecurityManager.<TryRefreshUsers>b__9_0()
+2026-08-19;1:01:09 PM;Info;AlarmSecurityManager.TryRefreshUsers;All users list updated.
+2026-08-19;1:01:09 PM;Info;LicenseWrapper;Login is True
+2026-08-19;1:01:09 PM;Info;MipSdkWrapper.CheckSettings();Number of read configurations: 2
+2026-08-19;1:01:09 PM;Info;MipSdkWrapper.GetConfigurationByServerId();Settings has been found.
+2026-08-19;1:01:09 PM;Info;Main thread;Current Culture: en-US
+2026-08-19;1:01:09 PM;Info;Main thread;Current UI Culture: en-US
+2026-08-19;1:01:09 PM;Info;InitFromConfigSettings;outgoingAudioEnabled is True
+2026-08-19;1:01:09 PM;Info;InitFromConfigSettings;incomingAudioEnabled is True
+2026-08-19;1:01:09 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;1:01:09 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;1:06:34 PM;Info;InitializeFromSiteItem;Server sub type: 480, Code base: 2, Version string: 22.1.0.1
+2026-08-19;1:06:34 PM;Info;LicenseWrapper;Login is True
+2026-08-19;1:06:34 PM;Info;MipSdkWrapper.CheckSettings();Number of read configurations: 2
+2026-08-19;1:06:34 PM;Info;MipSdkWrapper.GetConfigurationByServerId();Settings has been found.
+2026-08-19;1:06:34 PM;Info;Main thread;Current Culture: en-US
+2026-08-19;1:06:34 PM;Info;Main thread;Current UI Culture: en-US
+2026-08-19;1:06:34 PM;Info;InitFromConfigSettings;outgoingAudioEnabled is True
+2026-08-19;1:06:34 PM;Info;InitFromConfigSettings;incomingAudioEnabled is True
+2026-08-19;1:06:34 PM;Info;LicenseWrapper;OnlineExpiration is False
+2026-08-19;1:06:34 PM;Error;System.ServiceModel.FaultException`1[VideoOS.EventServer.Communication.AlarmSecurity.Client.AlarmSecurityServiceFault]: Unhandled exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.QueryRoleMemebers(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetUsersFromRole(String roleId)
+   at VideoOS.Event.Server.Alarm.AlarmSecurityManagerVMO.GetAllUsers()
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.<GetAllUsers>b__7_0(IUser user)
+   at VideoOS.Event.Server.WebService.Configuration.AlarmSecurityCredentials.GetAllUsers();
+Server stack trace: 
+   at System.ServiceModel.Channels.ServiceChannel.HandleReply(ProxyOperationRuntime operation, ProxyRpc& rpc)
+   at System.ServiceModel.Channels.ServiceChannel.Call(String action, Boolean oneway, ProxyOperationRuntime operation, Object[] ins, Object[] outs, TimeSpan timeout)
+   at System.ServiceModel.Channels.ServiceChannelProxy.InvokeService(IMethodCallMessage methodCall, ProxyOperationRuntime operation)
+   at System.ServiceModel.Channels.ServiceChannelProxy.Invoke(IMessage message)
+
+Exception rethrown at [0]: 
+   at System.Runtime.Remoting.Proxies.RealProxy.HandleReturnMessage(IMessage reqMsg, IMessage retMsg)
+   at System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(MessageData& msgData, Int32 type)
+   at VideoOS.EventServer.Communication.AlarmSecurity.Client.IAlarmSecurity.GetAllUsers()
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.<>c.<GetAllUsers>b__7_0(AlarmSecurityClient client)
+   at VideoOS.EventServer.Communication.ClientPool`1.CallWithRetry[TRet](Func`2 method, Int32 retryCount)
+   at VideoOS.EventServer.Communication.AlarmSecurity.AlarmSecurityClientCredentials.GetAllUsers()
+   at VideoOS.Mobile.Management.AlarmSecurityManager.<TryRefreshUsers>b__9_0()
+2026-08-19;1:06:34 PM;Info;AlarmSecurityManager.TryRefreshUsers;All users list updated.
+2026-08-19;1:06:34 PM;Info;LicenseWrapper;OnlineExpiration is False

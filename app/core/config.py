@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     milestone_health_timeout_seconds: float = 5.0
     milestone_stream_timeout_seconds: int = 60
     milestone_reconnect_delay_seconds: int = 3
-    milestone_camera_cache_ttl_seconds: int = 300
+    milestone_reconnect_max_delay_seconds: int = 60
+    milestone_health_cache_seconds: float = 30.0
 
     hls_root: str = r"C:\hls"
     thumbnail_root: str = r"C:\thumbnails"
@@ -32,6 +33,7 @@ class Settings(BaseSettings):
     viewer_heartbeat_ttl_seconds: int = 90
     viewer_cleanup_interval_seconds: int = 10
     thumbnail_refresh_interval_minutes: int = 30
+    thumbnail_capture_timeout_seconds: float = 10.0
 
     ffmpeg_bin: str = r"C:\nginx\ffmpeg.exe"
 

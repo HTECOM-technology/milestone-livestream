@@ -134,21 +134,46 @@ class CameraWorkerManager:
             return None
 
     def refresh_thumbnail_once(self, camera_id: str) -> None:
+        self.refresh_thumbnails_once([camera_id])
+
+    def refresh_thumbnails_once(self, camera_ids: list[str]) -> bool:
+        """
+        Refresh thumbnail cho nhiều camera bằng MỘT subprocess, tức một lần login duy nhất.
+        Trước đây mỗi camera là một subprocess => N login vào Milestone mỗi vòng job.
+        """
+        if not camera_ids:
+            return False
+
         settings = get_settings()
-        thumbnail_path = get_thumbnail_path(camera_id)
+        log_path = Path(settings.hls_root) / 'thumbnail_refresh.log'
+
         cmd = [
             settings.worker_python_executable or sys.executable,
             '-m', 'app.worker_runtime.thumbnail_once',
-            '--camera-id', camera_id,
-            '--thumbnail-path', str(thumbnail_path),
         ]
-        subprocess.Popen(
-            cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            cwd=str(Path.cwd()),
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == 'win32' else 0,
-        )
+        for camera_id in camera_ids:
+            cmd += ['--camera-id', camera_id]
+
+        # Không nuốt output của subprocess: lỗi từng camera phải đọc được trong file log.
+        try:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_file = open(log_path, 'a', encoding='utf-8')
+        except Exception:
+            log_file = None
+
+        try:
+            subprocess.Popen(
+                cmd,
+                stdout=log_file or subprocess.DEVNULL,
+                stderr=subprocess.STDOUT if log_file else subprocess.DEVNULL,
+                cwd=str(Path.cwd()),
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == 'win32' else 0,
+            )
+        finally:
+            if log_file:
+                log_file.close()
+
+        return True
 
 
 camera_worker_manager = CameraWorkerManager()

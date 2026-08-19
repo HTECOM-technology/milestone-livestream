@@ -55,6 +55,7 @@ class CameraRegistry:
             xml_text = client.get_all_views_and_cameras()
             return self._parse_cameras_from_xml(xml_text)
         finally:
+            # close() gửi LogOut trước khi đóng HTTP session.
             client.close()
 
     def _parse_cameras_from_xml(self, xml_text: str) -> list[CameraDefinition]:

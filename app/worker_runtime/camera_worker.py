@@ -86,7 +86,8 @@ def run_once(
     latest_path: Path,
     status_path: Path,
     log_dir: Path,
-) -> None:
+) -> int:
+    """Chạy một phiên stream. Trả về số frame đã đọc được trong phiên đó."""
     settings = get_settings()
 
     client: Optional[MilestoneMobileClient] = None
@@ -188,6 +189,8 @@ def run_once(
             ffmpeg.stop()
 
         if client:
+            # close() gửi LogOut trước khi đóng HTTP session, nên Milestone nhả
+            # session ngay thay vì để nó chờ timeout.
             client.close()
 
         update_status(
@@ -198,6 +201,8 @@ def run_once(
             stream_id=stream_id,
             frame_count=frame_count,
         )
+
+    return frame_count
 
 
 def main() -> None:
@@ -230,9 +235,13 @@ def main() -> None:
     status_path.parent.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
 
+    base_delay = settings.milestone_reconnect_delay_seconds
+    max_delay = settings.milestone_reconnect_max_delay_seconds
+    empty_sessions = 0
+
     while running:
         try:
-            run_once(
+            frame_count = run_once(
                 camera_id=camera_id,
                 hls_dir=hls_dir,
                 thumbnail_path=thumbnail_path,
@@ -247,14 +256,21 @@ def main() -> None:
                 status="error",
                 message=repr(exc),
             )
+            frame_count = 0
 
-            if not running:
-                break
+        if not running:
+            break
 
-            time.sleep(settings.milestone_reconnect_delay_seconds)
+        # Phiên có frame => reconnect nhanh như cũ. Phiên không ra frame nào
+        # (camera chết, RequestStream fail...) => giãn dần, tránh login liên tục vô ích.
+        if frame_count > 0:
+            empty_sessions = 0
+            delay = base_delay
         else:
-            if running:
-                time.sleep(settings.milestone_reconnect_delay_seconds)
+            empty_sessions += 1
+            delay = min(base_delay * (2 ** (empty_sessions - 1)), max_delay)
+
+        time.sleep(delay)
 
 
 if __name__ == "__main__":
