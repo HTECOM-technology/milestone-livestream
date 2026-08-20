@@ -134,19 +134,28 @@ async function fetchHighwaysData() {
         return FALLBACK_HIGHWAY_ITEMS;
     }
 }
-const CAMERA_HIGHWAY_ID = 44147;
-const CAMERA_API_URL = "https://portal.tctvec.vn/o/its/api/cameras";
+const CAMERA_HIGHWAY_CONFIGS = {
+    42753: {
+        apiBasePath: "/o/its-hld",
+    },
+    44147: {
+        apiBasePath: "/o/its",
+    },
+};
 const HLS_JS_URL = "https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js";
 const HLS_ATTACH_RETRY_COUNT = 3;
 const HLS_ATTACH_RETRY_DELAY_MS = 1200;
+const CAMERA_STARTUP_MIN_DURATION_MS = 8000;
+const CAMERA_STARTUP_STATUS = "Đang khởi động camera...";
 const CAMERA_THUMBNAIL_FALLBACK_URL = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original";
-let cameraList = null;
+let currentCameraList = [];
 let hlsScriptPromise = null;
 let activeCameraSession = null;
 let cameraRenderRequestId = 0;
 let cameraModalRequestId = 0;
 let cacheBustCounter = 0;
 const cameraShowStateCache = new Map();
+const cameraListCache = new Map();
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -174,6 +183,30 @@ function withCacheBust(url) {
     }
 }
 
+function normalizeCameraName(name) {
+    const rawName = typeof name === "string" ? name : String(name ?? "");
+
+    if (!rawName) {
+        return "";
+    }
+
+    const ipv4Segment = "(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)";
+    const ipv4Pattern = new RegExp(
+        `\\b${ipv4Segment}(?:\\.${ipv4Segment}){3}\\b`,
+        "g"
+    );
+    const parenthesizedIpv4Pattern = new RegExp(
+        `\\([^()]*\\b${ipv4Segment}(?:\\.${ipv4Segment}){3}\\b[^()]*\\)`,
+        "g"
+    );
+
+    return rawName
+        .replace(parenthesizedIpv4Pattern, " ")
+        .replace(ipv4Pattern, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 function getCameraCoordinate(camera, keys) {
     for (const key of keys) {
         const value = Number(camera[key]);
@@ -197,10 +230,32 @@ function mapCameraLocation(camera) {
     };
 }
 
-async function fetchCameras() {
-    if (cameraList) return cameraList;
+function getCameraConfig(highwayId) {
+    return CAMERA_HIGHWAY_CONFIGS[Number(highwayId)] || null;
+}
 
-    const response = await fetch(withCacheBust(CAMERA_API_URL), {
+function getCameraApiUrl(highwayId) {
+    const config = getCameraConfig(highwayId);
+
+    if (!config?.apiBasePath) {
+        return null;
+    }
+
+    return `https://portal.tctvec.vn${config.apiBasePath}/api/cameras`;
+}
+
+async function fetchCameras(highwayId) {
+    const cameraApiUrl = getCameraApiUrl(highwayId);
+
+    if (!cameraApiUrl) {
+        return [];
+    }
+
+    if (cameraListCache.has(cameraApiUrl)) {
+        return cameraListCache.get(cameraApiUrl);
+    }
+
+    const response = await fetch(withCacheBust(cameraApiUrl), {
         method: "GET",
         cache: "no-store",
         headers: { accept: "application/json" },
@@ -211,8 +266,18 @@ async function fetchCameras() {
     }
 
     const data = await response.json();
-    cameraList = Array.isArray(data.items) ? data.items : [];
-    return cameraList;
+    const cameras = Array.isArray(data.items)
+        ? data.items.map((camera) => ({
+            ...camera,
+            name: normalizeCameraName(camera.name) || "Camera",
+            __cameraApiUrl: cameraApiUrl,
+            __highwayId: Number(highwayId),
+        }))
+        : [];
+
+    cameraListCache.set(cameraApiUrl, cameras);
+
+    return cameras;
 }
 
 function getCameraIdentity(camera) {
@@ -329,8 +394,10 @@ async function renderCameras(highwayId) {
     if (!cameraContent) return;
 
     const requestId = ++cameraRenderRequestId;
+    const cameraApiUrl = getCameraApiUrl(highwayId);
 
-    if (Number(highwayId) !== CAMERA_HIGHWAY_ID) {
+    if (!cameraApiUrl) {
+        currentCameraList = [];
         cameraContent.innerHTML = '<div class="p-4 text-gray-500">Không có camera trực tuyến</div>';
         if (currentRoute?.mapData) currentRoute.mapData.cameraLocations = [];
         return;
@@ -341,7 +408,7 @@ async function renderCameras(highwayId) {
     let cameras = [];
     try {
         const [cameraData, cameraShowStates] = await Promise.all([
-            fetchCameras(),
+            fetchCameras(highwayId),
             fetchCameraShowState(highwayId),
         ]);
 
@@ -354,6 +421,8 @@ async function renderCameras(highwayId) {
     }
 
     if (requestId !== cameraRenderRequestId) return;
+
+    currentCameraList = cameras;
 
     if (!cameras.length) {
         cameraContent.innerHTML = '<div class="p-4 text-gray-500">Không có camera trực tuyến</div>';
@@ -410,7 +479,13 @@ async function renderCameras(highwayId) {
 }
 
 async function startCameraWatch(camera) {
-    const response = await fetch(withCacheBust(`${CAMERA_API_URL}/${encodeURIComponent(camera.camera_id)}/watch/start`), {
+    const cameraApiUrl = camera?.__cameraApiUrl || getCameraApiUrl(camera?.__highwayId);
+
+    if (!cameraApiUrl) {
+        throw new Error("Không tìm thấy cấu hình camera cho tuyến này");
+    }
+
+    const response = await fetch(withCacheBust(`${cameraApiUrl}/${encodeURIComponent(camera.camera_id)}/watch/start`), {
         method: "POST",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
@@ -426,13 +501,15 @@ async function startCameraWatch(camera) {
         throw new Error("Camera chưa có luồng HLS");
     }
 
-    return data;
+    // Trả kèm apiUrl để session giữ đúng instance của tuyến; heartbeat và watch/stop
+    // sau đó không phải tra lại từ danh sách camera nữa.
+    return { ...data, apiUrl: cameraApiUrl };
 }
 
-function stopCameraWatch(cameraId, sessionId, useBeacon = false) {
-    if (!cameraId || !sessionId) return;
+function stopCameraWatch(apiUrl, cameraId, sessionId, useBeacon = false) {
+    if (!apiUrl || !cameraId || !sessionId) return;
 
-    const url = `${CAMERA_API_URL}/${encodeURIComponent(cameraId)}/watch/stop`;
+    const url = `${apiUrl}/${encodeURIComponent(cameraId)}/watch/stop`;
     const body = JSON.stringify({ session_id: sessionId });
 
     // Khi tab đang bị đóng thì fetch thường bị hủy giữa đường, nên ưu tiên sendBeacon.
@@ -453,11 +530,11 @@ function stopCameraWatch(cameraId, sessionId, useBeacon = false) {
     });
 }
 
-function releaseActiveCameraWatch(useBeacon = false) {
-    if (!activeCameraSession) return;
-
-    const session = activeCameraSession;
-    activeCameraSession = null;
+function teardownCameraSession(session, useBeacon = false) {
+    // released chặn nhả hai lần: một session có thể bị đóng modal nhả trước, rồi
+    // promise attach HLS đang chờ mới resolve và nhả lần nữa.
+    if (!session || session.released) return;
+    session.released = true;
 
     if (session.heartbeatTimer) {
         clearInterval(session.heartbeatTimer);
@@ -469,12 +546,21 @@ function releaseActiveCameraWatch(useBeacon = false) {
 
     // Bắt buộc: không gọi /watch/stop thì backend chỉ biết viewer đã đi sau khi
     // heartbeat TTL 90s hết hạn, và trong 90s đó worker vẫn giữ session Milestone.
-    stopCameraWatch(session.cameraId, session.sessionId, useBeacon);
+    stopCameraWatch(session.apiUrl, session.cameraId, session.sessionId, useBeacon);
 }
 
-function startCameraHeartbeat(cameraId, sessionId) {
+function releaseActiveCameraWatch(useBeacon = false) {
+    const session = activeCameraSession;
+    activeCameraSession = null;
+    teardownCameraSession(session, useBeacon);
+}
+
+function startCameraHeartbeat(apiUrl, cameraId, sessionId) {
     return setInterval(() => {
-        fetch(`${CAMERA_API_URL}/${encodeURIComponent(cameraId)}/watch/heartbeat`, {
+        // apiUrl lấy từ session, không tra lại currentCameraList: đổi tuyến trong lúc
+        // modal đang mở làm find() trả undefined và heartbeat ngừng lặng lẽ, để backend
+        // thu hồi session sau TTL 90s ngay khi người dùng vẫn đang xem.
+        fetch(`${apiUrl}/${encodeURIComponent(cameraId)}/watch/heartbeat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ session_id: sessionId }),
@@ -548,6 +634,52 @@ async function attachHlsStreamWithRetry(video, hlsUrl) {
     throw lastError;
 }
 
+function getCameraModalFullscreenIcon(isFullscreen) {
+    if (isFullscreen) {
+        return `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M9 15H5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M15 9H19V5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M5 15L10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M19 9L14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    `;
+    }
+
+    return `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 5H5V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M15 19H19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M5 9L10 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M19 15L14 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  `;
+}
+
+function syncCameraModalFullscreenButton() {
+    const videoContainer = document.getElementById("cameraModalVideoContainer");
+    const fullscreenButton = document.getElementById("cameraModalFullscreenBtn");
+    if (!videoContainer || !fullscreenButton) return;
+
+    const isFullscreen = document.fullscreenElement === videoContainer;
+    fullscreenButton.innerHTML = getCameraModalFullscreenIcon(isFullscreen);
+}
+
+async function toggleCameraModalFullscreen() {
+    const videoContainer = document.getElementById("cameraModalVideoContainer");
+    if (!videoContainer) return;
+
+    try {
+        if (document.fullscreenElement === videoContainer) {
+            await document.exitFullscreen();
+        } else {
+            await videoContainer.requestFullscreen();
+        }
+    } catch (error) {
+        console.error("Fullscreen toggle failed:", error);
+    }
+}
+
 async function openCameraModal(camera) {
     const requestId = ++cameraModalRequestId;
     let modal = document.getElementById("cameraModal");
@@ -563,10 +695,13 @@ async function openCameraModal(camera) {
             <span style="color: white; font-size: 14px; font-weight: 700; line-height: 1;">×</span>
           </button>
           <div>
-            <div class="relative bg-black rounded-lg overflow-hidden" style="aspect-ratio: 16/9; margin-bottom: 0;">
-              <video id="cameraVideo" class="w-full h-full" controls autoplay muted playsinline style="border: 0;"></video>
-              <div id="cameraModalStatus" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;background:rgba(0,0,0,.35);font-size:14px;">
-                Đang tải luồng camera...
+            <div id="cameraModalVideoContainer" class="relative bg-black rounded-lg overflow-hidden" style="aspect-ratio: 16/9; margin-bottom: 0;">
+              <video id="cameraVideo" class="w-full h-full" autoplay muted playsinline disablepictureinpicture controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" style="border: 0;"></video>
+              <button id="cameraModalFullscreenBtn" type="button" aria-label="Toggle fullscreen" style="position:absolute;right:16px;bottom:16px;z-index:3;width:42px;height:42px;border:none;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s ease,transform .2s ease;">
+                ${getCameraModalFullscreenIcon(false)}
+              </button>
+              <div id="cameraModalStatus" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;background:rgba(0,0,0,.75);font-size:14px;z-index:2;">
+                ${CAMERA_STARTUP_STATUS}
               </div>
             </div>
             <h3 class="text-gray-900 text-lg font-semibold" id="cameraModalTitle" style="margin: 20px 0 0 0; padding: 0; color: #333; font-size: 18px; font-weight: 600;"></h3>
@@ -582,48 +717,115 @@ async function openCameraModal(camera) {
     document.getElementById("cameraModalTitle").textContent = camera.name || "Camera";
     const video = document.getElementById("cameraVideo");
     const status = document.getElementById("cameraModalStatus");
+    const fullscreenButton = document.getElementById("cameraModalFullscreenBtn");
+
+    if (!modal.dataset.bound) {
+        document.addEventListener("fullscreenchange", syncCameraModalFullscreenButton);
+        video.addEventListener("pause", () => {
+            if (status.style.display === "none" && !modal.classList.contains("hidden")) {
+                video.play().catch(() => { });
+            }
+        });
+        video.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+        });
+        fullscreenButton.addEventListener("click", () => {
+            toggleCameraModalFullscreen();
+        });
+        fullscreenButton.addEventListener("mouseenter", () => {
+            fullscreenButton.style.background = "rgba(0,0,0,.84)";
+            fullscreenButton.style.transform = "scale(1.05)";
+        });
+        fullscreenButton.addEventListener("mouseleave", () => {
+            fullscreenButton.style.background = "rgba(0,0,0,.72)";
+            fullscreenButton.style.transform = "scale(1)";
+        });
+        modal.dataset.bound = "true";
+    }
 
     video.pause();
     video.removeAttribute("src");
     video.load();
-    status.textContent = "Đang tải luồng camera...";
+    status.textContent = CAMERA_STARTUP_STATUS;
     status.style.display = "flex";
     modal.classList.remove("hidden");
     document.body.style.overflow = "hidden";
+    syncCameraModalFullscreenButton();
 
-    let watchData = null;
+    const startupStartedAt = Date.now();
+    const waitForMinimumStartupDuration = async () => {
+        const remainingTime = CAMERA_STARTUP_MIN_DURATION_MS - (Date.now() - startupStartedAt);
+        if (remainingTime > 0) {
+            await delay(remainingTime);
+        }
+    };
+
+    let session = null;
 
     try {
-        watchData = await startCameraWatch(camera);
-        if (requestId !== cameraModalRequestId) {
-            stopCameraWatch(camera.camera_id, watchData.session_id);
-            return;
-        }
+        const watchData = await startCameraWatch(camera);
 
-        status.textContent = "Đang mở luồng camera...";
-        const hls = await attachHlsStreamWithRetry(video, watchData.hls_url);
-        if (requestId !== cameraModalRequestId) {
-            if (hls) hls.destroy();
-            stopCameraWatch(camera.camera_id, watchData.session_id);
-            return;
-        }
-
-        const heartbeatTimer = startCameraHeartbeat(camera.camera_id, watchData.session_id);
-
-        activeCameraSession = {
+        // Ghi nhận session NGAY khi backend đã tạo, không chờ HLS attach xong. Attach
+        // có thể mất nhiều giây; nếu chờ tới lúc đó mới gán activeCameraSession thì
+        // đóng modal giữa lúc đang khởi động sẽ không gửi được /watch/stop.
+        session = {
             cameraId: camera.camera_id,
             sessionId: watchData.session_id,
-            heartbeatTimer,
-            hls,
+            apiUrl: watchData.apiUrl,
+            heartbeatTimer: null,
+            hls: null,
+            released: false,
         };
+
+        if (requestId !== cameraModalRequestId) {
+            teardownCameraSession(session);
+            return;
+        }
+
+        activeCameraSession = session;
+
+        const hls = await attachHlsStreamWithRetry(video, watchData.hls_url);
+
+        // activeCameraSession !== session nghĩa là trong lúc chờ đã có camera khác được
+        // mở, hoặc modal đã bị đóng; nhả đúng session của mình, không đụng session mới.
+        if (requestId !== cameraModalRequestId || activeCameraSession !== session) {
+            if (hls) hls.destroy();
+            teardownCameraSession(session);
+            return;
+        }
+
+        session.hls = hls;
+        session.heartbeatTimer = startCameraHeartbeat(session.apiUrl, camera.camera_id, session.sessionId);
+
+        await waitForMinimumStartupDuration();
+
+        // Vẫn phải kiểm tra lại sau khi chờ đủ startup: người dùng có thể đã đóng modal
+        // trong 8 giây đó.
+        if (requestId !== cameraModalRequestId || activeCameraSession !== session) {
+            if (activeCameraSession === session) {
+                activeCameraSession = null;
+            }
+            teardownCameraSession(session);
+            return;
+        }
 
         status.style.display = "none";
         video.play().catch(() => { });
     } catch (error) {
         console.error("Error opening camera:", error);
-        // watch/start đã tạo session rồi mới lỗi ở bước HLS: phải nhả, nếu không
+
+        // watch/start có thể đã tạo session rồi mới lỗi ở bước HLS: phải nhả, nếu không
         // worker cứ chạy tới khi heartbeat TTL hết hạn.
-        stopCameraWatch(camera.camera_id, watchData?.session_id);
+        if (activeCameraSession === session) {
+            activeCameraSession = null;
+        }
+        teardownCameraSession(session);
+
+        await waitForMinimumStartupDuration();
+        if (requestId !== cameraModalRequestId) {
+            return;
+        }
+
         status.textContent = "Không mở được luồng camera";
     }
 }
@@ -634,6 +836,16 @@ window.closeCameraModal = async function () {
     if (modal) {
         releaseActiveCameraWatch();
         const video = document.getElementById("cameraVideo");
+        const videoContainer = document.getElementById("cameraModalVideoContainer");
+
+        if (document.fullscreenElement === videoContainer) {
+            try {
+                await document.exitFullscreen();
+            } catch (error) {
+                console.error("Exit fullscreen failed:", error);
+            }
+        }
+
         video.pause();
         video.removeAttribute("src");
         video.load();
@@ -642,14 +854,14 @@ window.closeCameraModal = async function () {
     }
 }
 
-// Đóng tab, F5, chuyển trang: pagehide là event duy nhất chắc chắn chạy trên
-// cả desktop và mobile Safari, nên nhả session ở đây.
+// Đóng tab, F5, chuyển trang: pagehide là event duy nhất chắc chắn chạy trên cả
+// desktop và mobile Safari, nên nhả session ở đây.
 window.addEventListener("pagehide", () => {
     releaseActiveCameraWatch(true);
 });
 
 window.openCameraFromMap = function (cameraId) {
-    const camera = cameraList?.find((item) => item.camera_id === cameraId);
+    const camera = currentCameraList.find((item) => item.camera_id === cameraId);
     if (camera) openCameraModal(camera);
 }
 function mapApiDataToRouteData(apiItems) {
