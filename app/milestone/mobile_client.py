@@ -87,33 +87,58 @@ def xml_escape(value: str) -> str:
     )
 
 
+def _split_communication_blocks(text: str) -> list[str]:
+    start_tag = "<Communication"
+    end_tag = "</Communication>"
+    blocks: list[str] = []
+    pos = 0
+
+    while True:
+        start = text.find(start_tag, pos)
+        if start < 0:
+            break
+
+        end = text.find(end_tag, start)
+        if end < 0:
+            break
+
+        end += len(end_tag)
+        blocks.append(text[start:end])
+        pos = end
+
+    return blocks
+
+
+def _is_processing_block(block: str) -> bool:
+    try:
+        root = ET.fromstring(block)
+    except ET.ParseError:
+        return False
+
+    for elem in root.iter():
+        if elem.tag.split("}")[-1] == "Type":
+            return (elem.text or "").strip() == "Processing"
+
+    return False
+
+
 def normalize_xml_text(text: str) -> str:
     if not text:
         return text
 
-    text = text.strip()
+    # Khi xử lý lâu, Mobile Server gửi liên tiếp nhiều khối <Communication> có
+    # <Type>Processing</Type> (ConnectionId rỗng) trong cùng một response để giữ
+    # kết nối, khối cuối mới là kết quả thật. Lấy khối cuối không phải Processing.
+    blocks = _split_communication_blocks(text)
 
-    # Nếu response có ký tự rác trước XML
-    xml_start = text.find("<?xml")
-    communication_start = text.find("<Communication")
+    if not blocks:
+        return text.strip()
 
-    if xml_start >= 0:
-        start = xml_start
-    elif communication_start >= 0:
-        start = communication_start
-    else:
-        start = 0
+    for block in reversed(blocks):
+        if not _is_processing_block(block):
+            return block.strip()
 
-    text = text[start:].strip()
-
-    # Nếu sau </Communication> còn dữ liệu thừa thì cắt bỏ
-    end_tag = "</Communication>"
-    end = text.find(end_tag)
-
-    if end >= 0:
-        text = text[: end + len(end_tag)]
-
-    return text.strip()
+    return blocks[-1].strip()
 
 
 def parse_xml(text: str):
